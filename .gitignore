@@ -1,0 +1,13 @@
+#dados e ficheiros gerados ao correr o programa
+banco.db
+transacoes_*.csv
+servidor.log
+
+#python
+__pycache__/
+.venv/
+venv/
+
+#publicação
+*.zip
+DEPLOY.md

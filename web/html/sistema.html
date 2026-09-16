@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O sistema — Banco Python UC607</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/estilo.css" rel="stylesheet">
+</head>
+<body>
+
+<!--navegação-->
+<nav class="navbar navbar-expand-lg sticky-top navbar-banco">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            <span class="text-brand">🐍</span> Banco Python <span class="text-brand">UC607</span>
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#menuNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menuNav">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+                <li class="nav-item"><a class="nav-link" href="/#funcionalidades">Funcionalidades</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/sistema">O sistema</a></li>
+                <li class="nav-item ms-lg-2">
+                    <button id="botaoTema" class="btn btn-sm btn-outline-secondary border-0" title="Trocar tema">☀️</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!--introdução-->
+<header class="hero text-center container">
+    <h1>Como funciona <span class="text-brand">o sistema</span></h1>
+    <p class="subtitulo">
+        Uma só lógica, duas interfaces: o pacote <code>banco</code> tem todo o funcionamento,
+        o terminal e o site são apenas caras diferentes para o mesmo sistema.
+    </p>
+</header>
+
+<!--organização-->
+<section class="container py-4">
+    <div class="card card-banco p-4 mb-4">
+        <h5 class="fw-bold mb-3">🗂️ Organização do projeto</h5>
+        <div class="table-responsive">
+            <table class="table tabela-banco align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Ficheiro</th>
+                        <th>O que faz</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td class="iban-mono">main.py</td><td>Arranque da versão de terminal</td></tr>
+                    <tr><td class="iban-mono">servidor.py</td><td>A API web (Flask) que o site chama com <code>fetch</code></td></tr>
+                    <tr><td class="iban-mono">banco/modelos.py</td><td>As estruturas <code>Conta</code> e <code>Transacao</code> (dataclasses)</td></tr>
+                    <tr><td class="iban-mono">banco/erros.py</td><td>Os erros próprios do sistema</td></tr>
+                    <tr><td class="iban-mono">banco/operacoes.py</td><td>As funções do banco: criar conta, entrar, transferir, IBAN, retorno</td></tr>
+                    <tr><td class="iban-mono">banco/dados.py</td><td>A base de dados SQLite e a exportação para CSV</td></tr>
+                    <tr><td class="iban-mono">banco/relatorio.py</td><td>O relatório do sistema com threads</td></tr>
+                    <tr><td class="iban-mono">banco/menus.py</td><td>Os menus e a conversa com o utilizador no terminal</td></tr>
+                    <tr><td class="iban-mono">testes/testes.py</td><td>Os testes unitários (unittest)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!--transferência-->
+<section class="container pb-4">
+    <h2 class="text-center fw-bold mb-4">🔁 O caminho de uma transferência</h2>
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-banco h-100 p-4">
+                <div class="emoji">1️⃣</div>
+                <h6 class="fw-bold mt-3">Escrever o IBAN</h6>
+                <p class="text-secondary small mb-0">
+                    O <code>limpar_iban()</code> normaliza o que foi escrito: maiúsculas,
+                    sem espaços e sem o PT50 repetido. <code>pt50 0002</code> e <code>0002</code>
+                    dão o mesmo resultado.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-banco h-100 p-4">
+                <div class="emoji">2️⃣</div>
+                <h6 class="fw-bold mt-3">Ver o dono do IBAN</h6>
+                <p class="text-secondary small mb-0">
+                    O <code>procurar_por_iban()</code> diz de quem é a conta.
+                    O destinatário é sempre mostrado <strong>antes</strong> de qualquer
+                    dinheiro sair da conta.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-banco h-100 p-4">
+                <div class="emoji">3️⃣</div>
+                <h6 class="fw-bold mt-3">Confirmar e transferir</h6>
+                <p class="text-secondary small mb-0">
+                    Só depois da confirmação o <code>transferir()</code> mexe nos saldos:
+                    o valor sai da conta de origem e entra na de destino.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-banco h-100 p-4">
+                <div class="emoji">4️⃣</div>
+                <h6 class="fw-bold mt-3">Gravar tudo</h6>
+                <p class="text-secondary small mb-0">
+                    A transação fica registada com data e hora e é gravada no
+                    <code>banco.db</code> logo a seguir à operação.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--regras e dados-->
+<section class="container pb-5">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card card-banco p-4 h-100">
+                <h5 class="fw-bold mb-3">📏 Regras e validações</h5>
+                <ul class="mb-0">
+                    <li>Password com 6 a 10 caracteres, pelo menos 1 letra e 1 número</li>
+                    <li>IBAN único, gerado pelo sistema (PT50 seguido de um número livre)</li>
+                    <li>Valor da transferência positivo e saldo suficiente (senão dá <code>SaldoInsuficienteError</code>)</li>
+                    <li>Não se pode transferir para a própria conta</li>
+                    <li>Erros próprios em <code>erros.py</code>, apanhados com try/except nas duas interfaces</li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card card-banco p-4 h-100">
+                <h5 class="fw-bold mb-3">💾 Os dados e os testes</h5>
+                <p class="mb-2">
+                    Os dados vivem num ficheiro <strong>SQLite</strong> (<code>banco.db</code>),
+                    gravado após cada operação. O histórico é consultado por IBAN
+                    (enviadas e recebidas) e pode ser exportado para
+                    <code>transacoes_&lt;username&gt;.csv</code>.
+                </p>
+                <p class="mb-0 text-secondary">
+                    O projeto tem 5 testes unitários: utilizador duplicado, IBAN inexistente,
+                    saldo insuficiente, levantamento e depósito.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="text-center mt-4">
+        <a href="/#entrar" class="btn btn-brand btn-lg px-4">Experimentar o sistema</a>
+    </div>
+</section>
+
+<!--footer-->
+<footer class="footer-banco py-4 mt-auto">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+        <div>© 2026 Banco Python UC607 — projeto da formação UC00607</div>
+        <div>
+            Desenvolvido por
+            <a href="https://algarit.pt" target="_blank" class="text-decoration-none">
+                <img src="/algarit-assets/logo.png" alt="algarIT" class="ms-1">
+            </a>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/tema.js"></script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+/*cores do banco: roxo, cantos grandes e sombras suaves*/
+:root {
+    --brand: #7c5cff;
+    --brand-escuro: #5a3ee0;
+    --brand-suave: rgba(124, 92, 255, 0.12);
+}
+
+[data-bs-theme="dark"] body {
+    background: #12141c;
+}
+[data-bs-theme="light"] body {
+    background: #f6f5fb;
+}
+
+/*navbar*/
+.navbar-banco {
+    background: rgba(18, 20, 28, 0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+[data-bs-theme="light"] .navbar-banco {
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+.navbar-banco .nav-link {
+    color: #b9b9c9;
+}
+.navbar-banco .nav-link:hover {
+    color: #fff;
+}
+[data-bs-theme="light"] .navbar-banco .nav-link {
+    color: #555;
+}
+[data-bs-theme="light"] .navbar-banco .nav-link:hover {
+    color: #000;
+}
+
+/*botões da marca*/
+.btn-brand {
+    background: var(--brand);
+    border: none;
+    color: #fff;
+}
+.btn-brand:hover {
+    background: var(--brand-escuro);
+    color: #fff;
+}
+.text-brand {
+    color: var(--brand) !important;
+}
+.bg-brand-suave {
+    background: var(--brand-suave);
+}
+
+/*hero*/
+.hero {
+    padding: 5rem 0 3rem 0;
+}
+.hero h1 {
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+}
+.hero .subtitulo {
+    color: #9a9ab0;
+    max-width: 620px;
+    margin: 1rem auto 2rem auto;
+    font-size: 1.15rem;
+}
+[data-bs-theme="light"] .hero .subtitulo {
+    color: #666;
+}
+
+/*cards*/
+.card-banco {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 1.25rem;
+    background: #1a1d28;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s ease;
+}
+[data-bs-theme="light"] .card-banco {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 10px 30px rgba(90, 62, 224, 0.08);
+}
+.card-banco:hover {
+    transform: translateY(-3px);
+}
+.card-banco .emoji {
+    font-size: 2rem;
+}
+
+/*dashboard*/
+.saldo-grande {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+.iban-mono {
+    font-family: Consolas, "Courier New", monospace;
+    letter-spacing: 0.06em;
+}
+
+/*tabelas*/
+.tabela-banco {
+    --bs-table-bg: transparent;
+}
+.tabela-banco th {
+    color: var(--brand);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+/*footer*/
+.footer-banco {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    color: #8a8a9e;
+    font-size: 0.85rem;
+}
+[data-bs-theme="light"] .footer-banco {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    color: #777;
+}
+.footer-banco img {
+    height: 14px;
+    opacity: 0.85;
+}

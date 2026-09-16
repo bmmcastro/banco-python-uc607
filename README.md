@@ -8,7 +8,11 @@ Formador: Diogo Lopes Vaz.
 Online: https://bancopy607.algarit.pt
 Código: https://github.com/bmmcastro/banco-python-uc607
 Contas de demonstração: `bruno / bruno123` e `ana / ana123`
-(a página https://bancopy607.algarit.pt/sistema explica o sistema dentro do próprio site)
+
+O site tem um menu à esquerda (Início, Sobre e FAQ) e à direita o **Homebanking**
+(entrar/criar conta e usar o sistema) e o **Estado da API**, que testa do browser
+(JavaScript) se o Python do servidor está a responder, endpoint a endpoint.
+A página **Sobre** explica o sistema: https://bancopy607.algarit.pt/sobre
 
 ## Como correr (a partir desta pasta)
 

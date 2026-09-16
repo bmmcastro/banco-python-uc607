@@ -15,11 +15,25 @@
         <a class="navbar-brand fw-bold" href="/">
             <span class="text-brand">🐍</span> Banco Python <span class="text-brand">UC607</span>
         </a>
-        <div class="d-flex align-items-center gap-3 ms-auto">
-            <a class="nav-link text-secondary d-none d-md-inline" href="/sistema">O sistema</a>
-            <span class="text-secondary d-none d-md-inline">Olá, <strong id="nomeNavbar"></strong></span>
-            <button id="botaoTema" class="btn btn-sm btn-outline-secondary border-0" title="Trocar tema">☀️</button>
-            <button id="botaoSair" class="btn btn-sm btn-outline-danger">Sair</button>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#menuNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menuNav">
+            <ul class="navbar-nav me-auto align-items-lg-center">
+                <li class="nav-item"><a class="nav-link" href="/">Início</a></li>
+                <li class="nav-item"><a class="nav-link" href="/sobre">Sobre</a></li>
+                <li class="nav-item"><a class="nav-link" href="/faq">FAQ</a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+                <li class="nav-item"><a class="nav-link" href="/estado">Estado da API</a></li>
+                <li class="nav-item"><span class="text-secondary d-none d-lg-inline">Olá, <strong id="nomeNavbar"></strong></span>
+                <li class="nav-item">
+                    <button id="botaoTema" class="btn btn-sm btn-outline-secondary border-0" title="Trocar tema">☀️</button>
+                </li>
+                <li class="nav-item">
+                    <button id="botaoSair" class="btn btn-sm btn-outline-danger">Sair</button>
+                </li>
+            </ul>
         </div>
     </div>
 </nav>

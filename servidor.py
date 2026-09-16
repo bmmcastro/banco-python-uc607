@@ -1,5 +1,7 @@
 #servidor web do Banco Python UC607 (Flask)
 #serve as páginas da pasta web/html e a API que liga o site às funções do pacote banco
+from datetime import datetime
+
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError
 from banco.operacoes import criar_conta, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban
@@ -32,9 +34,21 @@ def pagina_inicial():
 def pagina_conta():
     return send_from_directory("web/html", "conta.html")
 
-@app.route("/sistema")
-def pagina_sistema():
-    return send_from_directory("web/html", "sistema.html")
+@app.route("/sobre")
+def pagina_sobre():
+    return send_from_directory("web/html", "sobre.html")
+
+@app.route("/faq")
+def pagina_faq():
+    return send_from_directory("web/html", "faq.html")
+
+@app.route("/homebanking")
+def pagina_homebanking():
+    return send_from_directory("web/html", "homebanking.html")
+
+@app.route("/estado")
+def pagina_estado():
+    return send_from_directory("web/html", "estado.html")
 
 @app.route("/css/<ficheiro>")
 def ficheiros_css(ficheiro):
@@ -78,6 +92,16 @@ def api_registar():
 def api_sair():
     session.clear()
     return jsonify({"ok": True})
+
+#estado da API: a página do estado usa isto para ver se o Python está vivo
+@app.route("/api/estado")
+def api_estado():
+    return jsonify({
+        "ok": True,
+        "hora": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+        "contas": len(contas),
+        "transacoes": len(transacoes)
+    })
 
 @app.route("/api/conta")
 def api_conta():

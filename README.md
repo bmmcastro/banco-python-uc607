@@ -4,7 +4,7 @@ Sistema de transferências bancárias com **duas interfaces a partilhar a mesma 
 
 Projeto final da formação **UC00607 — Desenvolver Programas Complexos em Linguagem Estruturada**.
 A linguagem de programação principal usada é o Python.
-Formador: Diogo Lopes Vaz.
+Formador: Diogo Lopes Vaz (EISNT).
 
 Online: https://bancopy607.algarit.pt
 Código: https://github.com/bmmcastro/banco-python-uc607

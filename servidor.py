@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_conta, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro
-from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias
+from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes
 from banco.relatorio import gerar_relatorio
 
 app = Flask(__name__, static_folder=None)
@@ -108,9 +108,10 @@ def api_registar():
 
 @app.route("/api/sair", methods=["POST"])
 def api_sair():
-    #o ficheiro de transferências do utilizador é apagado quando ele sai
+    #os ficheiros do utilizador (transferências e transações exportadas) são apagados quando ele sai
     if "username" in session:
         apagar_ficheiro_transferencias(session["username"])
+        apagar_ficheiro_transacoes(session["username"])
     session.clear()
     return jsonify({"ok": True})
 

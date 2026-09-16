@@ -1,7 +1,7 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_conta, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro
-from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias
+from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes
 from banco.relatorio import gerar_relatorio
 
 #pedir um número ao utilizador, sem deixar o programa rebentar se escrever letras
@@ -40,8 +40,9 @@ def menu_conta(conta, contas, transacoes):
             "Valor: "
         )
         if opcao == 0:
-            #o ficheiro de transferências do utilizador é apagado quando ele sai
+            #os ficheiros do utilizador (transferências e transações exportadas) são apagados quando ele sai
             apagar_ficheiro_transferencias(conta.username)
+            apagar_ficheiro_transacoes(conta.username)
             print("Saiu da conta.\n")
             break
         elif opcao == 1:

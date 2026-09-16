@@ -1,9 +1,10 @@
 #testes ao sistema (correr com: python testes.py)
+import os
 import unittest
 
 from banco.modelos import Conta
 from banco.operacoes import criar_conta, transferir, entrar, transferir_por_ficheiro
-from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias
+from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 
 
@@ -92,6 +93,18 @@ class TestesBanco(unittest.TestCase):
         apagar_ficheiro_transferencias("brunoteste")
         with self.assertRaises(FileNotFoundError):
             ler_ficheiro_transferencias("brunoteste")
+
+    def test_exportacao_apaga_so_o_ficheiro_do_utilizador(self):
+        #exportar cria a pasta transacoes; ao sair só o ficheiro do utilizador é apagado
+        guardar_csv(self.contas["bruno"], [])
+        guardar_csv(self.contas["ana"], [])
+
+        apagar_ficheiro_transacoes("bruno")
+        self.assertFalse(os.path.exists("transacoes/transacoes_bruno.csv"))
+        self.assertTrue(os.path.exists("transacoes/transacoes_ana.csv"))  #o dos outros fica
+
+        #arranjar para os próximos testes
+        apagar_ficheiro_transacoes("ana")
 
 
 if __name__ == "__main__":

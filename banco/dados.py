@@ -148,10 +148,27 @@ def apagar_ficheiro_transferencias(username):
     if os.path.exists(caminho_ficheiro_transferencias(username)):
         os.remove(caminho_ficheiro_transferencias(username))
 
+#ficheiros das transações exportadas: vivem na pasta transacoes, um por utilizador
+#(transacoes/transacoes_<username>.csv) e são apagados quando o utilizador sai do sistema
+
+#o caminho do ficheiro de transações exportado de um utilizador
+def caminho_ficheiro_transacoes(username):
+    return os.path.join("transacoes", f"transacoes_{username}.csv")
+
+#apagar o ficheiro de transações exportado do utilizador (quando sai do sistema)
+#só o ficheiro dele é apagado: os dos outros utilizadores ficam intactos
+def apagar_ficheiro_transacoes(username):
+    if os.path.exists(caminho_ficheiro_transacoes(username)):
+        os.remove(caminho_ficheiro_transacoes(username))
+
 #guardar as transações de uma conta num ficheiro CSV: devolve o nome do ficheiro criado
 #(o nome tem o username, por isso só é substituído quando o mesmo user exporta de novo)
 def guardar_csv(conta, transacoes_da_conta):
-    nome_ficheiro = f"transacoes_{conta.username}.csv"
+    #a pasta transacoes é criada se ainda não existir
+    if not os.path.exists("transacoes"):
+        os.mkdir("transacoes")
+
+    nome_ficheiro = caminho_ficheiro_transacoes(conta.username)
     ficheiro = open(nome_ficheiro, "w", encoding="utf-8", newline="")
     escritor = csv.writer(ficheiro)
     escritor.writerow(["tipo", "data", "iban origem", "username origem", "iban destino", "username destino", "valor"])

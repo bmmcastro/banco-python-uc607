@@ -211,9 +211,8 @@ function carregarHistorico() {
             data.textContent = transacao.data;
 
             const conta = document.createElement("td");
-            conta.textContent = transacao.tipo == "Enviada"
-                ? "Para " + transacao.username_destino + " (" + transacao.iban_destino + ")"
-                : "De " + transacao.username_origem + " (" + transacao.iban_origem + ")";
+            conta.textContent = "De " + transacao.username_origem + " (" + transacao.iban_origem + ")"
+                + " → Para " + transacao.username_destino + " (" + transacao.iban_destino + ")";
 
             const valor = document.createElement("td");
             valor.className = transacao.tipo == "Enviada" ? "text-danger" : "text-success";

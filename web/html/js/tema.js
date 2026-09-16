@@ -34,3 +34,8 @@ document.addEventListener("DOMContentLoaded", function () {
         botao.textContent = document.documentElement.getAttribute("data-bs-theme") == "dark" ? "☀️" : "🌙";
     }
 });
+
+//registar o service worker (deixa o site instalar-se como app e funcionar offline)
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js");
+}

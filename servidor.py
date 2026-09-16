@@ -64,6 +64,19 @@ def ficheiros_js(ficheiro):
 def ficheiros_algarit(ficheiro):
     return send_from_directory("web/html/algarit-assets", ficheiro)
 
+#ficheiros da app instalável (PWA)
+@app.route("/manifest.json")
+def ficheiro_manifest():
+    return send_from_directory("web/html", "manifest.json")
+
+@app.route("/sw.js")
+def ficheiro_sw():
+    return send_from_directory("web/html", "sw.js")
+
+@app.route("/icons/<ficheiro>")
+def ficheiros_icones(ficheiro):
+    return send_from_directory("web/html/icons", ficheiro)
+
 
 #a API do banco
 

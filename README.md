@@ -65,6 +65,7 @@ projeto_banco/
 
 - `banco.db` — base de dados SQLite com as contas e as transações (criada automaticamente)
 - `transacoes_<username>.csv` — exportação do histórico de cada utilizador
+- `transferencias/` — os ficheiros de transferências por CSV (um por utilizador; no terminal é `transferencias/<username>.csv`, no site é guardado o ficheiro carregado; o ficheiro é apagado quando o utilizador sai)
 
 ## Testes
 

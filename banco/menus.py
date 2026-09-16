@@ -1,7 +1,7 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_conta, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro
-from banco.dados import guardar_csv, guardar_dados
+from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias
 from banco.relatorio import gerar_relatorio
 
 #pedir um número ao utilizador, sem deixar o programa rebentar se escrever letras
@@ -40,6 +40,8 @@ def menu_conta(conta, contas, transacoes):
             "Valor: "
         )
         if opcao == 0:
+            #o ficheiro de transferências do utilizador é apagado quando ele sai
+            apagar_ficheiro_transferencias(conta.username)
             print("Saiu da conta.\n")
             break
         elif opcao == 1:
@@ -150,25 +152,23 @@ def menu_conta(conta, contas, transacoes):
                 print(f"{linha[1]} | {linha[2]} | {linha[0]}")
             print("")
         elif opcao == 9:
-            #transferências em lote a partir de um ficheiro CSV (iban, nome, valor)
-            nome_ficheiro = input("Nome do ficheiro CSV: ")
-
+            #transferências em lote: o ficheiro vive na pasta transferencias com o nome do utilizador
             try:
-                ficheiro = open(nome_ficheiro, "r", encoding="utf-8")
-                conteudo = ficheiro.read()
-                ficheiro.close()
-
-                erros = transferir_por_ficheiro(contas, transacoes, conta.username, conteudo)
-
-                if len(erros) > 0:
-                    print("O ficheiro tem problemas, não foi transferido nada:")
-                    for erro in erros:
-                        print(f" - {erro}")
-                else:
-                    guardar_dados(contas, transacoes)  #guardar logo depois da operação
-                    print(f"Transferências do ficheiro feitas com sucesso. Saldo atual: {conta.valor}")
+                conteudo = ler_ficheiro_transferencias(conta.username)
             except FileNotFoundError:
-                print("Ficheiro não encontrado.")
+                print(f"Não existe ficheiro para a tua conta (transferencias/{conta.username}.csv).")
+                print("")
+                continue
+
+            erros = transferir_por_ficheiro(contas, transacoes, conta.username, conteudo)
+
+            if len(erros) > 0:
+                print("O ficheiro tem problemas, não foi transferido nada:")
+                for erro in erros:
+                    print(f" - {erro}")
+            else:
+                guardar_dados(contas, transacoes)  #guardar logo depois da operação
+                print(f"Transferências do ficheiro feitas com sucesso. Saldo atual: {conta.valor}")
             print("")
         else:
             print("Opção inválida. Tente novamente.\n")

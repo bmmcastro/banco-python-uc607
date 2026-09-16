@@ -5,7 +5,7 @@ from banco.modelos import Conta, Transacao
 from banco.dados import criar_tabelas, carregar_dados
 from banco.menus import menu_principal
 
-print(pyfiglet.figlet_format("BANCO"))
+print(pyfiglet.figlet_format("Banco Python UC607"))
 
 #dados do sistema: carregar do ficheiro banco.db
 criar_tabelas()

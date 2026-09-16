@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_conta, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro
-from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv
+from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias
 from banco.relatorio import gerar_relatorio
 
 app = Flask(__name__, static_folder=None)
@@ -108,6 +108,9 @@ def api_registar():
 
 @app.route("/api/sair", methods=["POST"])
 def api_sair():
+    #o ficheiro de transferências do utilizador é apagado quando ele sai
+    if "username" in session:
+        apagar_ficheiro_transferencias(session["username"])
     session.clear()
     return jsonify({"ok": True})
 
@@ -200,7 +203,12 @@ def api_transferencias_ficheiro():
         return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
 
     try:
-        erros = transferir_por_ficheiro(contas, transacoes, session["username"], request.get_json()["conteudo"])
+        conteudo = request.get_json()["conteudo"]
+
+        #o ficheiro carregado fica guardado na pasta transferencias (sai quando o utilizador sai)
+        guardar_ficheiro_transferencias(session["username"], conteudo)
+
+        erros = transferir_por_ficheiro(contas, transacoes, session["username"], conteudo)
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
 

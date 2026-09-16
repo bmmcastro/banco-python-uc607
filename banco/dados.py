@@ -1,4 +1,5 @@
 #tudo o que mexe em ficheiros: a base de dados sqlite e os ficheiros csv
+import os
 import sqlite3
 import csv
 
@@ -118,6 +119,34 @@ def limpar_tentativas(username):
     cursor.execute("DELETE FROM bloqueios WHERE username = ?", (username,))
     ligacao.commit()
     ligacao.close()
+
+#ficheiros de transferências por CSV: vivem na pasta transferencias, um por utilizador
+#(transferencias/<username>.csv) e são apagados quando o utilizador sai do sistema
+
+#o caminho do ficheiro de transferências de um utilizador
+def caminho_ficheiro_transferencias(username):
+    return os.path.join("transferencias", username + ".csv")
+
+#guardar o ficheiro de transferências do utilizador (o site guarda o que foi carregado)
+def guardar_ficheiro_transferencias(username, conteudo):
+    if not os.path.exists("transferencias"):
+        os.mkdir("transferencias")
+
+    ficheiro = open(caminho_ficheiro_transferencias(username), "w", encoding="utf-8")
+    ficheiro.write(conteudo)
+    ficheiro.close()
+
+#ler o ficheiro de transferências do utilizador
+def ler_ficheiro_transferencias(username):
+    ficheiro = open(caminho_ficheiro_transferencias(username), "r", encoding="utf-8")
+    conteudo = ficheiro.read()
+    ficheiro.close()
+    return conteudo
+
+#apagar o ficheiro de transferências do utilizador (quando sai do sistema)
+def apagar_ficheiro_transferencias(username):
+    if os.path.exists(caminho_ficheiro_transferencias(username)):
+        os.remove(caminho_ficheiro_transferencias(username))
 
 #guardar as transações de uma conta num ficheiro CSV: devolve o nome do ficheiro criado
 #(o nome tem o username, por isso só é substituído quando o mesmo user exporta de novo)

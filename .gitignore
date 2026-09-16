@@ -1,6 +1,7 @@
 #dados e ficheiros gerados ao correr o programa
 banco.db
 transacoes_*.csv
+transferencias/
 servidor.log
 
 #python

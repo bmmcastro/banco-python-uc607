@@ -3,7 +3,7 @@ import unittest
 
 from banco.modelos import Conta
 from banco.operacoes import criar_conta, transferir, entrar, transferir_por_ficheiro
-from banco.dados import limpar_tentativas
+from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 
 
@@ -83,6 +83,15 @@ class TestesBanco(unittest.TestCase):
         self.assertEqual(len(erros), 1)
         self.assertEqual(self.contas["ana"].valor, 200)  #nada mudou
         self.assertEqual(len(self.transacoes), 0)
+
+    def test_ficheiro_de_transferencias_guarda_le_apaga(self):
+        #o ficheiro do utilizador vive na pasta transferencias e é apagado quando ele sai
+        guardar_ficheiro_transferencias("brunoteste", "iban,nome,valor\n")
+        self.assertEqual(ler_ficheiro_transferencias("brunoteste"), "iban,nome,valor\n")
+
+        apagar_ficheiro_transferencias("brunoteste")
+        with self.assertRaises(FileNotFoundError):
+            ler_ficheiro_transferencias("brunoteste")
 
 
 if __name__ == "__main__":

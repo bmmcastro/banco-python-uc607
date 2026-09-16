@@ -1,8 +1,14 @@
 #funções do banco
+import time
 from datetime import datetime
 
-from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError
+from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.modelos import Conta, Transacao
+from banco.dados import ver_bloqueio, anotar_tentativa, limpar_tentativas
+
+#limite de tentativas de login: 3 passwords erradas bloqueiam a conta durante 30 segundos
+MAXIMO_TENTATIVAS = 3
+SEGUNDOS_BLOQUEIO = 30
 
 #ver se a password é válida: 6 a 10 caracteres, pelo menos 1 letra e 1 número
 def validar_password(password):
@@ -72,9 +78,31 @@ def criar_conta(contas, username, password):
     contas[username] = Conta(username, password, 0, iban)  #a conta é criada com valor 0
 
 #entrar: devolve a conta se o username e a password estiverem certos, senão None
+#depois de 3 tentativas erradas a conta fica bloqueada durante 30 segundos
+#(as tentativas são guardadas no banco.db, por isso valem para o terminal e para o site)
 def entrar(contas, username, password):
+    agora = time.time()
+
+    tentativas, bloqueado_ate = ver_bloqueio(username)
+
+    #conta bloqueada: nem a password certa entra
+    if bloqueado_ate > agora:
+        restantes = int(bloqueado_ate - agora)
+        raise ContaBloqueadaError(f"Muitas tentativas erradas. A conta está bloqueada mais {restantes} segundos")
+
     if username in contas and contas[username].password == password:
+        #login certo: esquecer as tentativas erradas dessa conta
+        limpar_tentativas(username)
         return contas[username]
+
+    #login errado: contar a tentativa
+    tentativas = tentativas + 1
+
+    if tentativas >= MAXIMO_TENTATIVAS:
+        anotar_tentativa(username, 0, agora + SEGUNDOS_BLOQUEIO)
+        raise ContaBloqueadaError(f"Password errada demasiadas vezes. A conta fica bloqueada durante {SEGUNDOS_BLOQUEIO} segundos")
+
+    anotar_tentativa(username, tentativas, 0)
     return None
 
 #transferir por IBAN: mexe nos dois saldos e registra a transação

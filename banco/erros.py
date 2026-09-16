@@ -8,3 +8,6 @@ class UtilizadorInexistenteError(Exception):
 
 class SaldoInsuficienteError(Exception):
     pass
+
+class ContaBloqueadaError(Exception):
+    pass

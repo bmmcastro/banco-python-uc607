@@ -1,5 +1,5 @@
 #menus do sistema e conversa com o utilizador
-from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError
+from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_conta, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban
 from banco.dados import guardar_csv, guardar_dados
 from banco.relatorio import gerar_relatorio
@@ -181,10 +181,13 @@ def menu_principal(contas, transacoes):
             username = input("Username: ")
             password = input("Password: ")
 
-            conta_atual = entrar(contas, username, password)
-            if conta_atual == None:
-                print("Username ou password errados.\n")
-            else:
-                menu_conta(conta_atual, contas, transacoes)
+            try:
+                conta_atual = entrar(contas, username, password)
+                if conta_atual == None:
+                    print("Username ou password errados.\n")
+                else:
+                    menu_conta(conta_atual, contas, transacoes)
+            except ContaBloqueadaError as erro:
+                print(f"{erro}\n")
         else:
             print("Opção inválida. Tente novamente.\n")

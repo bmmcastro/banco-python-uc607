@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
-from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError
+from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_conta, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban
 from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv
 from banco.relatorio import gerar_relatorio
@@ -83,7 +83,10 @@ def ficheiros_icones(ficheiro):
 @app.route("/api/entrar", methods=["POST"])
 def api_entrar():
     dados = request.get_json()
-    conta = entrar(contas, dados["username"], dados["password"])
+    try:
+        conta = entrar(contas, dados["username"], dados["password"])
+    except ContaBloqueadaError as erro:
+        return jsonify({"ok": False, "erro": str(erro)})
 
     if conta == None:
         return jsonify({"ok": False, "erro": "Username ou password errados."})

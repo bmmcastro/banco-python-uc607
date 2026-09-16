@@ -2,8 +2,9 @@
 import unittest
 
 from banco.modelos import Conta
-from banco.operacoes import criar_conta, transferir
-from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError
+from banco.operacoes import criar_conta, transferir, entrar
+from banco.dados import limpar_tentativas
+from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 
 
 class TestesBanco(unittest.TestCase):
@@ -14,6 +15,9 @@ class TestesBanco(unittest.TestCase):
         self.transacoes = []
         self.contas["bruno"] = Conta("bruno", "bruno123", 100, "PT50 0001")
         self.contas["ana"] = Conta("ana", "ana123", 200, "PT50 0002")
+
+        #limpar as tentativas de login para cada teste começar igual
+        limpar_tentativas("brunoteste")
 
     def test_utilizador_duplicado(self):
         #criar um utilizador que já existe tem de dar erro
@@ -39,6 +43,27 @@ class TestesBanco(unittest.TestCase):
         #levantar diminui o saldo
         self.contas["bruno"].levantar(30)
         self.assertEqual(self.contas["bruno"].valor, 70)
+
+    def test_bloqueio_depois_de_tentativas_erradas(self):
+        #a terceira password errada bloqueia a conta
+        entrar(self.contas, "brunoteste", "errada1")
+        entrar(self.contas, "brunoteste", "errada2")
+        with self.assertRaises(ContaBloqueadaError):
+            entrar(self.contas, "brunoteste", "errada3")
+
+        #bloqueada: o login não entra, nem com outra password
+        with self.assertRaises(ContaBloqueadaError):
+            entrar(self.contas, "brunoteste", "outra")
+
+        #arranjar o utilizador de teste para os próximos testes
+        limpar_tentativas("brunoteste")
+
+    def test_login_certo_reseta_as_tentativas(self):
+        #um login certo esquece as tentativas erradas anteriores
+        entrar(self.contas, "bruno", "errada1")
+        entrar(self.contas, "bruno", "errada2")
+        conta = entrar(self.contas, "bruno", "bruno123")
+        self.assertEqual(conta.username, "bruno")
 
 
 if __name__ == "__main__":

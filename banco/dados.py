@@ -27,6 +27,13 @@ def criar_tabelas():
             username_destino TEXT
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bloqueios (
+            username TEXT,
+            tentativas INTEGER,
+            bloqueado_ate REAL
+        )
+    """)
 
     ligacao.commit()
     ligacao.close()
@@ -75,6 +82,41 @@ def guardar_dados(contas, transacoes):
         )
 
     ligacao.commit()  #confirmar as alterações no ficheiro
+    ligacao.close()
+
+#tentativas de login erradas e bloqueios (guardadas na base de dados para
+#funcionarem igual no terminal e no site, mesmo com o servidor a correr em processos separados)
+
+#ver o estado das tentativas de um utilizador: devolve (tentativas, bloqueado_ate)
+def ver_bloqueio(username):
+    ligacao = sqlite3.connect("banco.db")
+    cursor = ligacao.cursor()
+    cursor.execute("SELECT tentativas, bloqueado_ate FROM bloqueios WHERE username = ?", (username,))
+    linha = cursor.fetchone()
+    ligacao.close()
+
+    if linha == None:
+        return 0, 0
+    return linha[0], linha[1]
+
+#anotar as tentativas erradas (e até quando está bloqueado, se for o caso)
+def anotar_tentativa(username, tentativas, bloqueado_ate):
+    ligacao = sqlite3.connect("banco.db")
+    cursor = ligacao.cursor()
+    cursor.execute("DELETE FROM bloqueios WHERE username = ?", (username,))
+    cursor.execute(
+        "INSERT INTO bloqueios (username, tentativas, bloqueado_ate) VALUES (?, ?, ?)",
+        (username, tentativas, bloqueado_ate)
+    )
+    ligacao.commit()
+    ligacao.close()
+
+#esquecer as tentativas de um utilizador (login certo ou fim do bloqueio)
+def limpar_tentativas(username):
+    ligacao = sqlite3.connect("banco.db")
+    cursor = ligacao.cursor()
+    cursor.execute("DELETE FROM bloqueios WHERE username = ?", (username,))
+    ligacao.commit()
     ligacao.close()
 
 #guardar as transações de uma conta num ficheiro CSV: devolve o nome do ficheiro criado

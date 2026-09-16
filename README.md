@@ -55,6 +55,7 @@ projeto_banco/
 ## Regras e validações
 
 - Password com 6 a 10 caracteres, pelo menos 1 letra e 1 número
+- Depois de 3 tentativas de login erradas, a conta fica bloqueada durante 30 segundos
 - IBAN único, gerado pelo sistema (`PT50` seguido de um número livre)
 - Valor da transferência positivo e saldo suficiente (senão `SaldoInsuficienteError`)
 - Não se pode transferir para a própria conta

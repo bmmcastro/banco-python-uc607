@@ -2,7 +2,8 @@
 
 Sistema de transferências bancárias com **duas interfaces a partilhar a mesma lógica**: um programa de terminal e um site web. Cada conta tem username, password e um IBAN único, e suporta depósitos, levantamentos, transferências por IBAN com confirmação do destinatário, histórico com exportação para CSV, relatório do sistema com threads e cálculo de retorno com juro composto (recursivo).
 
-Projeto da formação **UC00607 — Desenvolver Programas Complexos em Linguagem Estruturada**.
+Projeto final da formação **UC00607 — Desenvolver Programas Complexos em Linguagem Estruturada**.
+A linguagem de programação principal usada é o Python.
 Formador: Diogo Lopes Vaz.
 
 Online: https://bancopy607.algarit.pt

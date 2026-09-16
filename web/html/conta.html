@@ -115,6 +115,18 @@
                 <div id="resultadoRetorno" class="small mt-2 d-none"></div>
             </div>
         </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card card-banco p-4 h-100">
+                <div class="emoji">📤</div>
+                <h5 class="fw-bold mt-2">Transferir por CSV</h5>
+                <div id="mensagemCsv" class="small mb-2 d-none"></div>
+                <form id="formCsv">
+                    <input type="file" id="csvFicheiro" class="form-control mb-2" accept=".csv" required>
+                    <button type="submit" class="btn btn-brand w-100">Transferir ficheiro</button>
+                    <a href="/transferencias_exemplo.csv" class="small d-block text-center mt-2">ver ficheiro de exemplo</a>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!--histórico-->

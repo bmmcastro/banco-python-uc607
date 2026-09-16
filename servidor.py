@@ -5,7 +5,7 @@ from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_conta, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban
+from banco.operacoes import criar_conta, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro
 from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv
 from banco.relatorio import gerar_relatorio
 
@@ -187,6 +187,28 @@ def api_transferir():
         return jsonify({"ok": False, "erro": str(erro)})
     except SaldoInsuficienteError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+
+#ficheiro de exemplo das transferências por CSV (para o utilizador ver o formato)
+@app.route("/transferencias_exemplo.csv")
+def ficheiro_exemplo_transferencias():
+    return send_from_directory("web/html", "transferencias_exemplo.csv", as_attachment=True)
+
+#transferências em lote a partir de um ficheiro CSV enviado pelo site
+@app.route("/api/transferencias_ficheiro", methods=["POST"])
+def api_transferencias_ficheiro():
+    if "username" not in session:
+        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+
+    try:
+        erros = transferir_por_ficheiro(contas, transacoes, session["username"], request.get_json()["conteudo"])
+    except ValueError as erro:
+        return jsonify({"ok": False, "erro": str(erro)})
+
+    if len(erros) > 0:
+        return jsonify({"ok": False, "erros": erros})
+
+    guardar_dados(contas, transacoes)
+    return jsonify({"ok": True, "valor": contas[session["username"]].valor})
 
 @app.route("/api/transacoes")
 def api_transacoes():

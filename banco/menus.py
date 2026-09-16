@@ -1,6 +1,6 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_conta, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban
+from banco.operacoes import criar_conta, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro
 from banco.dados import guardar_csv, guardar_dados
 from banco.relatorio import gerar_relatorio
 
@@ -36,6 +36,7 @@ def menu_conta(conta, contas, transacoes):
             " 6 - Histórico de transações\n"
             " 7 - Consultar retorno\n"
             " 8 - Relatório do sistema\n"
+            " 9 - Transferir por ficheiro CSV\n"
             "Valor: "
         )
         if opcao == 0:
@@ -147,6 +148,27 @@ def menu_conta(conta, contas, transacoes):
             print("----------------------------------------")
             for linha in relatorio:
                 print(f"{linha[1]} | {linha[2]} | {linha[0]}")
+            print("")
+        elif opcao == 9:
+            #transferências em lote a partir de um ficheiro CSV (iban, nome, valor)
+            nome_ficheiro = input("Nome do ficheiro CSV: ")
+
+            try:
+                ficheiro = open(nome_ficheiro, "r", encoding="utf-8")
+                conteudo = ficheiro.read()
+                ficheiro.close()
+
+                erros = transferir_por_ficheiro(contas, transacoes, conta.username, conteudo)
+
+                if len(erros) > 0:
+                    print("O ficheiro tem problemas, não foi transferido nada:")
+                    for erro in erros:
+                        print(f" - {erro}")
+                else:
+                    guardar_dados(contas, transacoes)  #guardar logo depois da operação
+                    print(f"Transferências do ficheiro feitas com sucesso. Saldo atual: {conta.valor}")
+            except FileNotFoundError:
+                print("Ficheiro não encontrado.")
             print("")
         else:
             print("Opção inválida. Tente novamente.\n")

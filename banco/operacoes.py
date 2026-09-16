@@ -1,4 +1,5 @@
 #funções do banco
+import csv
 import time
 from datetime import datetime
 
@@ -136,6 +137,72 @@ def transferir(contas, transacoes, username_origem, iban_destino, valor):
         username_destino,
     )
     transacoes.append(transacao)
+
+#transferências em lote a partir de um ficheiro CSV (iban, nome, valor)
+#valida todas as linhas primeiro: o IBAN existe, o nome é o dono certo e há saldo para tudo
+#se houver algum erro não se transfere nada; devolve a lista de erros (vazio = transferências feitas)
+def transferir_por_ficheiro(contas, transacoes, username_origem, conteudo):
+    erros = []
+    transferencias = []
+    saldo_disponivel = contas[username_origem].valor
+
+    leitor = csv.DictReader(conteudo.splitlines())
+
+    #a primeira linha é o cabeçalho, por isso os dados começam na linha 2
+    for linha in leitor:
+        numero = leitor.line_num
+
+        #o cabeçalho tem de ter as três colunas
+        if "iban" not in linha or "nome" not in linha or "valor" not in linha:
+            erros.append(f"linha {numero}: faltam colunas (o cabeçalho tem de ser iban,nome,valor)")
+            continue
+
+        #1: o IBAN tem de existir
+        iban = limpar_iban(linha["iban"])
+        dono = procurar_por_iban(contas, iban)
+        if dono == None:
+            erros.append(f"linha {numero}: o IBAN {linha['iban']} não existe no sistema")
+            continue
+
+        #2: o nome tem de ser o dono do IBAN
+        nome = linha["nome"].strip()
+        if nome != dono:
+            erros.append(f"linha {numero}: o nome {nome} não é o dono do IBAN {iban} (é {dono})")
+            continue
+
+        #3: não se pode transferir para a própria conta
+        if dono == username_origem:
+            erros.append(f"linha {numero}: não podes transferir para a tua própria conta")
+            continue
+
+        #4: o valor tem de ser um número maior que zero
+        try:
+            valor = float(linha["valor"].replace(",", "."))
+        except ValueError:
+            erros.append(f"linha {numero}: o valor {linha['valor']} não é um número")
+            continue
+
+        if valor <= 0:
+            erros.append(f"linha {numero}: o valor tem de ser maior que zero")
+            continue
+
+        #5: o saldo tem de chegar para todas as transferências do ficheiro
+        if valor > saldo_disponivel:
+            erros.append(f"linha {numero}: o saldo não chega para todas as transferências")
+            continue
+        saldo_disponivel = saldo_disponivel - valor
+
+        transferencias.append((iban, valor))
+
+    #com algum erro não se transfere nada
+    if len(erros) > 0:
+        return erros
+
+    #tudo certo: fazer as transferências (o transferir já regista as transações)
+    for iban, valor in transferencias:
+        transferir(contas, transacoes, username_origem, iban, valor)
+
+    return []
 
 #calcular o valor da conta com juro composto, de forma recursiva
 #cada mês o valor é multiplicado pela taxa, até acabarem os meses

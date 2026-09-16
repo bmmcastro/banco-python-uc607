@@ -126,6 +126,49 @@ function cancelarTransferencia() {
     ibanATransferir = "";
 }
 
+//transferir por ficheiro CSV: o site le o ficheiro e o servidor valida tudo
+document.getElementById("formCsv").addEventListener("submit", function (evento) {
+    evento.preventDefault();
+    const mensagem = document.getElementById("mensagemCsv");
+    const ficheiro = document.getElementById("csvFicheiro").files[0];
+
+    if (ficheiro == undefined) {
+        return;
+    }
+
+    //ler o conteúdo do ficheiro escolhido pelo utilizador
+    const leitor = new FileReader();
+    leitor.onload = function () {
+        pedirPost("/api/transferencias_ficheiro", { conteudo: leitor.result }).then(function (dados) {
+            mensagem.classList.remove("d-none");
+            mensagem.classList.remove("text-success");
+            mensagem.textContent = "";
+
+            if (dados.ok) {
+                document.getElementById("saldoConta").textContent = euros(dados.valor);
+                mensagem.textContent = "Transferências do ficheiro efetuadas com sucesso.";
+                mensagem.classList.add("text-success");
+                document.getElementById("formCsv").reset();
+                carregarHistorico();
+                carregarRelatorio();
+            } else if (dados.erros != undefined) {
+                //mostrar a lista de problemas encontrados no ficheiro
+                const lista = document.createElement("ul");
+                lista.className = "mb-0 ps-3";
+                for (const erro of dados.erros) {
+                    const item = document.createElement("li");
+                    item.textContent = erro;
+                    lista.appendChild(item);
+                }
+                mensagem.appendChild(lista);
+            } else {
+                mensagem.textContent = dados.erro;
+            }
+        });
+    };
+    leitor.readAsText(ficheiro);
+});
+
 //consultar o retorno (juro composto)
 document.getElementById("formRetorno").addEventListener("submit", function (evento) {
     evento.preventDefault();

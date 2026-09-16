@@ -159,6 +159,7 @@
                     <li>IBAN único, gerado pelo sistema (PT50 seguido de um número livre)</li>
                     <li>Valor da transferência positivo e saldo suficiente (senão dá <code>SaldoInsuficienteError</code>)</li>
                     <li>Não se pode transferir para a própria conta</li>
+                    <li>Transferências por ficheiro CSV (iban, nome, valor): o IBAN tem de existir, o nome tem de ser o dono do IBAN e o saldo tem de chegar para todas — senão não transfere nada</li>
                     <li>Erros próprios em <code>erros.py</code>, apanhados com try/except nas duas interfaces</li>
                 </ul>
             </div>

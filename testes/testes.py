@@ -2,7 +2,7 @@
 import unittest
 
 from banco.modelos import Conta
-from banco.operacoes import criar_conta, transferir, entrar
+from banco.operacoes import criar_conta, transferir, entrar, transferir_por_ficheiro
 from banco.dados import limpar_tentativas
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 
@@ -64,6 +64,25 @@ class TestesBanco(unittest.TestCase):
         entrar(self.contas, "bruno", "errada2")
         conta = entrar(self.contas, "bruno", "bruno123")
         self.assertEqual(conta.username, "bruno")
+
+    def test_transferencia_por_ficheiro_ok(self):
+        #um ficheiro certo transfere tudo de uma vez
+        conteudo = "iban,nome,valor\nPT50 0001,bruno,10\n"
+        erros = transferir_por_ficheiro(self.contas, self.transacoes, "ana", conteudo)
+
+        self.assertEqual(erros, [])
+        self.assertEqual(self.contas["ana"].valor, 190)    #200 - 10
+        self.assertEqual(self.contas["bruno"].valor, 110)  #100 + 10
+        self.assertEqual(len(self.transacoes), 1)
+
+    def test_transferencia_por_ficheiro_com_erro_nada_transfere(self):
+        #nome errado numa linha => erro e nenhuma transferência é feita
+        conteudo = "iban,nome,valor\nPT50 0001,bruno,10\nPT50 0001,ana,5\n"
+        erros = transferir_por_ficheiro(self.contas, self.transacoes, "ana", conteudo)
+
+        self.assertEqual(len(erros), 1)
+        self.assertEqual(self.contas["ana"].valor, 200)  #nada mudou
+        self.assertEqual(len(self.transacoes), 0)
 
 
 if __name__ == "__main__":

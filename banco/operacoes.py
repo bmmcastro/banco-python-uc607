@@ -58,6 +58,10 @@ def criar_conta(contas, username, password):
     if username == "":
         raise ValueError("O username não pode ser vazio")
 
+    #só letras e números: usernames com barras ou pontos não podem ser usados para fugir da pasta
+    if not username.isalnum():
+        raise ValueError("O username só pode ter letras e números")
+
     if username in contas:
         raise UtilizadorJaExisteError("O username já existe no sistema")
 

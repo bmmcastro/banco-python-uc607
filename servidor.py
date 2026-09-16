@@ -1,5 +1,6 @@
 #servidor web do Banco Python UC607 (Flask)
 #serve as páginas da pasta web/html e a API que liga o site às funções do pacote banco
+import os
 from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
@@ -9,7 +10,8 @@ from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_cs
 from banco.relatorio import gerar_relatorio
 
 app = Flask(__name__, static_folder=None)
-app.secret_key = "banco-python-uc607"  #chave para as sessões de login
+#a chave das sessões vem do servidor (CHAVE_SECRETA no .htaccess); em local usa-se a chave de teste
+app.secret_key = os.environ.get("CHAVE_SECRETA", "banco-python-uc607")
 
 #dados do sistema em memória (iguais aos do main.py)
 criar_tabelas()

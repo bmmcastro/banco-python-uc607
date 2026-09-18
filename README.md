@@ -69,7 +69,7 @@ projeto_banco/
 
 ## Testes
 
-`testes/testes.py` tem 5 testes unitários (unittest): utilizador duplicado, IBAN inexistente, saldo insuficiente, levantamento e depósito.
+`testes/testes.py` tem 15 testes unitários (unittest): utilizador duplicado, utilizador inexistente, saldo insuficiente, levantamento, depósito, bloqueio de login, exportação e pesquisa de transações, transferências por ficheiro e valores inválidos.
 
 ## Bibliotecas usadas
 

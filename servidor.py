@@ -5,7 +5,7 @@ from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_conta, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro
+from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes
 from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes
 from banco.relatorio import gerar_relatorio
 
@@ -15,16 +15,18 @@ app.secret_key = os.environ.get("CHAVE_SECRETA", "banco-python-uc607")
 
 #dados do sistema em memória (iguais aos do main.py)
 criar_tabelas()
-contas, transacoes = carregar_dados()
+utilizadores, contas, transacoes = carregar_dados()
 
 if len(contas) == 0:
-    from banco.modelos import Conta, Transacao
-    contas["bruno"] = Conta("bruno", "bruno123", 100, "PT50 0001")
-    contas["ana"] = Conta("ana", "ana123", 200, "PT50 0002")
+    from banco.modelos import Utilizador, Conta, Transacao
+    utilizadores["bruno"] = Utilizador("bruno", "bruno123")
+    contas["bruno"] = Conta("bruno", 100, "PT50 0001")
+    utilizadores["ana"] = Utilizador("ana", "ana123")
+    contas["ana"] = Conta("ana", 200, "PT50 0002")
     contas["bruno"].valor = contas["bruno"].valor - 50
     contas["ana"].valor = contas["ana"].valor + 50
     transacoes.append(Transacao("07/09/2026 10:00", 50, "PT50 0001", "bruno", "PT50 0002", "ana"))
-    guardar_dados(contas, transacoes)
+    guardar_dados(utilizadores, contas, transacoes)
 
 
 #as páginas e os ficheiros do site
@@ -84,22 +86,22 @@ def ficheiros_icones(ficheiro):
 def api_entrar():
     dados = request.get_json()
     try:
-        conta = entrar(contas, dados["username"], dados["password"])
+        utilizador = entrar(utilizadores, dados["username"], dados["password"])
     except ContaBloqueadaError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
 
-    if conta == None:
+    if utilizador == None:
         return jsonify({"ok": False, "erro": "Username ou password errados."})
 
-    session["username"] = conta.username
+    session["username"] = utilizador.username
     return jsonify({"ok": True})
 
 @app.route("/api/registar", methods=["POST"])
 def api_registar():
     dados = request.get_json()
     try:
-        criar_conta(contas, dados["username"], dados["password"])
-        guardar_dados(contas, transacoes)
+        criar_utilizador(utilizadores, contas, dados["username"], dados["password"])
+        guardar_dados(utilizadores, contas, transacoes)
         return jsonify({"ok": True, "iban": contas[dados["username"]].iban})
     except UtilizadorJaExisteError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
@@ -141,7 +143,7 @@ def api_levantar():
     conta = contas[session["username"]]
     try:
         conta.levantar(float(request.get_json()["valor"]))
-        guardar_dados(contas, transacoes)
+        guardar_dados(utilizadores, contas, transacoes)
         return jsonify({"ok": True, "valor": conta.valor})
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
@@ -156,7 +158,7 @@ def api_depositar():
     conta = contas[session["username"]]
     try:
         conta.depositar(float(request.get_json()["valor"]))
-        guardar_dados(contas, transacoes)
+        guardar_dados(utilizadores, contas, transacoes)
         return jsonify({"ok": True, "valor": conta.valor})
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
@@ -183,7 +185,7 @@ def api_transferir():
     dados = request.get_json()
     try:
         transferir(contas, transacoes, session["username"], limpar_iban(dados["iban_destino"]), float(dados["valor"]))
-        guardar_dados(contas, transacoes)
+        guardar_dados(utilizadores, contas, transacoes)
         return jsonify({"ok": True, "valor": contas[session["username"]].valor})
     except UtilizadorInexistenteError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
@@ -225,19 +227,23 @@ def api_transacoes():
         return jsonify({"ok": False, "transacoes": []})
 
     conta = contas[session["username"]]
+
+    #a pesquisa vem no endereço (?pesquisa=...); sem pesquisa mostra tudo
+    pesquisa = request.args.get("pesquisa", "")
+    minhas_transacoes = pesquisar_transacoes(transacoes, conta, pesquisa)
+
     lista = []
-    for transacao in transacoes:
-        if transacao.iban_origem == conta.iban or transacao.iban_destino == conta.iban:
-            tipo = "Enviada" if transacao.iban_origem == conta.iban else "Recebida"
-            lista.append({
-                "tipo": tipo,
-                "data": transacao.data,
-                "valor": transacao.valor,
-                "iban_origem": transacao.iban_origem,
-                "username_origem": transacao.username_origem,
-                "iban_destino": transacao.iban_destino,
-                "username_destino": transacao.username_destino,
-            })
+    for transacao in minhas_transacoes:
+        tipo = "Enviada" if transacao.iban_origem == conta.iban else "Recebida"
+        lista.append({
+            "tipo": tipo,
+            "data": transacao.data,
+            "valor": transacao.valor,
+            "iban_origem": transacao.iban_origem,
+            "username_origem": transacao.username_origem,
+            "iban_destino": transacao.iban_destino,
+            "username_destino": transacao.username_destino,
+        })
 
     return jsonify({"ok": True, "transacoes": lista})
 

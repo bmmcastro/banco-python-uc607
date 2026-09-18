@@ -85,7 +85,7 @@
                 <tbody>
                     <tr><td class="iban-mono">main.py</td><td>Arranque da versão de terminal</td></tr>
                     <tr><td class="iban-mono">servidor.py</td><td>A API web (Flask) que o site chama com <code>fetch</code></td></tr>
-                    <tr><td class="iban-mono">banco/modelos.py</td><td>As estruturas <code>Conta</code> e <code>Transacao</code> (dataclasses)</td></tr>
+                    <tr><td class="iban-mono">banco/modelos.py</td><td>As estruturas <code>Utilizador</code>, <code>Conta</code> e <code>Transacao</code> (dataclasses)</td></tr>
                     <tr><td class="iban-mono">banco/erros.py</td><td>Os erros próprios do sistema</td></tr>
                     <tr><td class="iban-mono">banco/operacoes.py</td><td>As funções do banco: criar conta, entrar, transferir, IBAN, retorno</td></tr>
                     <tr><td class="iban-mono">banco/dados.py</td><td>A base de dados SQLite e a exportação para CSV</td></tr>
@@ -170,7 +170,8 @@
                 <p class="mb-2">
                     Os dados vivem num ficheiro <strong>SQLite</strong> (<code>banco.db</code>),
                     gravado após cada operação. O histórico é consultado por IBAN
-                    (enviadas e recebidas) e pode ser exportado para
+                    (enviadas e recebidas), pode ser <strong>pesquisado por data, nome,
+                    IBAN ou valor</strong> e exportado para
                     <code>transacoes_&lt;username&gt;.csv</code>.
                 </p>
                 <p class="mb-0 text-secondary">

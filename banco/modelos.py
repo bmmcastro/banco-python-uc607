@@ -5,9 +5,14 @@ from banco.erros import SaldoInsuficienteError
 
 
 @dataclass
-class Conta:
+class Utilizador:
     username: str
     password: str
+
+
+@dataclass
+class Conta:
+    username: str
     valor: float
     iban: str
 

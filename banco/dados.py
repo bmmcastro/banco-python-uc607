@@ -3,7 +3,7 @@ import os
 import sqlite3
 import csv
 
-from banco.modelos import Conta, Transacao
+from banco.modelos import Utilizador, Conta, Transacao
 
 #criar as tabelas no ficheiro banco.db (só cria se ainda não existirem)
 def criar_tabelas():
@@ -11,9 +11,14 @@ def criar_tabelas():
     cursor = ligacao.cursor()
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS utilizadores (
+            username TEXT,
+            password TEXT
+        )
+    """)
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS contas (
             username TEXT,
-            password TEXT,
             valor REAL,
             iban TEXT
         )
@@ -41,16 +46,30 @@ def criar_tabelas():
 
 #carregar os dados guardados no banco.db para o sistema
 def carregar_dados():
+    utilizadores = {}
     contas = {}
     transacoes = []
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
 
+    #migração: nas bases de dados antigas as passwords vinham na tabela contas
+    colunas = [linha[1] for linha in cursor.execute("PRAGMA table_info(contas)")]
+    if "password" in colunas:
+        quantidade = cursor.execute("SELECT COUNT(*) FROM utilizadores").fetchone()[0]
+        if quantidade == 0:
+            cursor.execute("INSERT INTO utilizadores (username, password) SELECT username, password FROM contas")
+            ligacao.commit()
+
     #cada linha vem como um tuplo, separa-se logo nas variáveis
-    for username, password, valor, iban in cursor.execute(
-        "SELECT username, password, valor, iban FROM contas"
+    for username, password in cursor.execute(
+        "SELECT username, password FROM utilizadores"
     ):
-        contas[username] = Conta(username, password, valor, iban)
+        utilizadores[username] = Utilizador(username, password)
+
+    for username, valor, iban in cursor.execute(
+        "SELECT username, valor, iban FROM contas"
+    ):
+        contas[username] = Conta(username, valor, iban)
 
     for data, valor, iban_origem, username_origem, iban_destino, username_destino in cursor.execute(
         "SELECT data, valor, iban_origem, username_origem, iban_destino, username_destino FROM transacoes"
@@ -58,20 +77,28 @@ def carregar_dados():
         transacoes.append(Transacao(data, valor, iban_origem, username_origem, iban_destino, username_destino))
 
     ligacao.close()
-    return contas, transacoes
+    return utilizadores, contas, transacoes
 
 #guardar os dados do sistema no banco.db (apaga o que lá estava e guarda tudo de novo)
-def guardar_dados(contas, transacoes):
+def guardar_dados(utilizadores, contas, transacoes):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
+    cursor.execute("DELETE FROM utilizadores")
     cursor.execute("DELETE FROM contas")
     cursor.execute("DELETE FROM transacoes")
+
+    for username in utilizadores:
+        utilizador = utilizadores[username]
+        cursor.execute(
+            "INSERT INTO utilizadores (username, password) VALUES (?, ?)",
+            (utilizador.username, utilizador.password)
+        )
 
     for username in contas:
         conta = contas[username]
         cursor.execute(
-            "INSERT INTO contas (username, password, valor, iban) VALUES (?, ?, ?, ?)",
-            (conta.username, conta.password, conta.valor, conta.iban)
+            "INSERT INTO contas (username, valor, iban) VALUES (?, ?, ?)",
+            (conta.username, conta.valor, conta.iban)
         )
 
     for transacao in transacoes:

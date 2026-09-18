@@ -1,6 +1,6 @@
 # Banco Python UC607
 
-Sistema de transferências bancárias com **duas interfaces a partilhar a mesma lógica**: um programa de terminal e um site web. Cada conta tem username, password e um IBAN único, e suporta depósitos, levantamentos, transferências por IBAN com confirmação do destinatário, transferências em lote por ficheiro CSV (iban, nome, valor) com validação de tudo antes de executar, histórico com exportação para CSV, relatório do sistema com threads e cálculo de retorno com juro composto (recursivo).
+Sistema de transferências bancárias com **duas interfaces a partilhar a mesma lógica**: um programa de terminal e um site web. Cada utilizador tem username e password, a sua conta tem um IBAN único, e o sistema suporta depósitos, levantamentos, transferências por IBAN com confirmação do destinatário, transferências em lote por ficheiro CSV (iban, nome, valor) com validação de tudo antes de executar, histórico com exportação para CSV e pesquisa por data, nome, IBAN ou valor, relatório do sistema com threads e cálculo de retorno com juro composto (recursivo).
 
 Projeto final da formação **UC00607 — Desenvolver Programas Complexos em Linguagem Estruturada**.
 A linguagem de programação principal usada é o Python.
@@ -35,7 +35,7 @@ projeto_banco/
 ├── main.py            arranque da versão terminal
 ├── servidor.py        a API web (Flask) que liga o site às funções do pacote banco
 ├── banco/             o pacote com a lógica do sistema
-│   ├── modelos.py     as estruturas Conta e Transacao (dataclasses)
+│   ├── modelos.py     as estruturas Utilizador, Conta e Transacao (dataclasses)
 │   ├── erros.py       os erros próprios (UtilizadorJaExiste, SaldoInsuficiente, ...)
 │   ├── operacoes.py   as funções do banco (criar conta, entrar, transferir, IBAN, retorno)
 │   ├── dados.py       a base de dados sqlite e a exportação para CSV

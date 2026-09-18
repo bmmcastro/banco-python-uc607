@@ -2,8 +2,8 @@
 import os
 import unittest
 
-from banco.modelos import Conta
-from banco.operacoes import criar_conta, transferir, entrar, transferir_por_ficheiro
+from banco.modelos import Utilizador, Conta
+from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes
 from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 
@@ -11,11 +11,14 @@ from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, Sal
 class TestesBanco(unittest.TestCase):
 
     def setUp(self):
-        #contas de teste usadas por todos os testes
+        #utilizadores e contas de teste usados por todos os testes
+        self.utilizadores = {}
         self.contas = {}
         self.transacoes = []
-        self.contas["bruno"] = Conta("bruno", "bruno123", 100, "PT50 0001")
-        self.contas["ana"] = Conta("ana", "ana123", 200, "PT50 0002")
+        self.utilizadores["bruno"] = Utilizador("bruno", "bruno123")
+        self.contas["bruno"] = Conta("bruno", 100, "PT50 0001")
+        self.utilizadores["ana"] = Utilizador("ana", "ana123")
+        self.contas["ana"] = Conta("ana", 200, "PT50 0002")
 
         #limpar as tentativas de login para cada teste começar igual
         limpar_tentativas("brunoteste")
@@ -23,7 +26,7 @@ class TestesBanco(unittest.TestCase):
     def test_utilizador_duplicado(self):
         #criar um utilizador que já existe tem de dar erro
         with self.assertRaises(UtilizadorJaExisteError):
-            criar_conta(self.contas, "bruno", "outra123")
+            criar_utilizador(self.utilizadores, self.contas, "bruno", "outra123")
 
     def test_utilizador_inexistente(self):
         #transferir para um IBAN que não existe tem de dar erro
@@ -47,24 +50,33 @@ class TestesBanco(unittest.TestCase):
 
     def test_bloqueio_depois_de_tentativas_erradas(self):
         #a terceira password errada bloqueia a conta
-        entrar(self.contas, "brunoteste", "errada1")
-        entrar(self.contas, "brunoteste", "errada2")
+        entrar(self.utilizadores, "brunoteste", "errada1")
+        entrar(self.utilizadores, "brunoteste", "errada2")
         with self.assertRaises(ContaBloqueadaError):
-            entrar(self.contas, "brunoteste", "errada3")
+            entrar(self.utilizadores, "brunoteste", "errada3")
 
         #bloqueada: o login não entra, nem com outra password
         with self.assertRaises(ContaBloqueadaError):
-            entrar(self.contas, "brunoteste", "outra")
+            entrar(self.utilizadores, "brunoteste", "outra")
 
         #arranjar o utilizador de teste para os próximos testes
         limpar_tentativas("brunoteste")
 
     def test_login_certo_reseta_as_tentativas(self):
         #um login certo esquece as tentativas erradas anteriores
-        entrar(self.contas, "bruno", "errada1")
-        entrar(self.contas, "bruno", "errada2")
-        conta = entrar(self.contas, "bruno", "bruno123")
-        self.assertEqual(conta.username, "bruno")
+        entrar(self.utilizadores, "bruno", "errada1")
+        entrar(self.utilizadores, "bruno", "errada2")
+        utilizador = entrar(self.utilizadores, "bruno", "bruno123")
+        self.assertEqual(utilizador.username, "bruno")
+
+    def test_criar_utilizador_cria_conta_com_iban(self):
+        #criar um utilizador cria também a conta a zeros com um IBAN único
+        criar_utilizador(self.utilizadores, self.contas, "carla", "carla123")
+
+        self.assertIn("carla", self.utilizadores)
+        self.assertEqual(self.utilizadores["carla"].password, "carla123")
+        self.assertEqual(self.contas["carla"].valor, 0)
+        self.assertIn("PT50", self.contas["carla"].iban)
 
     def test_transferencia_por_ficheiro_ok(self):
         #um ficheiro certo transfere tudo de uma vez
@@ -105,6 +117,22 @@ class TestesBanco(unittest.TestCase):
 
         #arranjar para os próximos testes
         apagar_ficheiro_transacoes("ana")
+
+    def test_pesquisar_transacoes(self):
+        #pesquisar por username, por IBAN e por data encontra as transações certas
+        transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 10)
+
+        #o bruno pesquisa por "ana": encontra a transação que enviou
+        encontradas = pesquisar_transacoes(self.transacoes, self.contas["bruno"], "ana")
+        self.assertEqual(len(encontradas), 1)
+
+        #a ana pesquisa pelo IBAN do bruno: encontra a que recebeu
+        encontradas = pesquisar_transacoes(self.transacoes, self.contas["ana"], "PT50 0001")
+        self.assertEqual(len(encontradas), 1)
+
+        #pesquisa que não existe em nenhuma transação: não encontra nada
+        encontradas = pesquisar_transacoes(self.transacoes, self.contas["bruno"], "zeze")
+        self.assertEqual(len(encontradas), 0)
 
 
 if __name__ == "__main__":

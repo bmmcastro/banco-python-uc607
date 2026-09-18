@@ -1,6 +1,6 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_conta, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro
+from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes
 from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes
 from banco.relatorio import gerar_relatorio
 
@@ -21,7 +21,7 @@ def pedir_opcao(texto):
             print("Escreva um número.")
 
 #menu depois de entrar na conta
-def menu_conta(conta, contas, transacoes):
+def menu_conta(conta, utilizadores, contas, transacoes):
     print(f"Bem-vindo {conta.username}!\n")
 
     while True:
@@ -37,6 +37,7 @@ def menu_conta(conta, contas, transacoes):
             " 7 - Consultar retorno\n"
             " 8 - Relatório do sistema\n"
             " 9 - Transferir por ficheiro CSV\n"
+            " 10 - Pesquisar transações\n"
             "Valor: "
         )
         if opcao == 0:
@@ -49,7 +50,7 @@ def menu_conta(conta, contas, transacoes):
             try:
                 valor = pedir_numero("Valor a levantar: ")
                 conta.levantar(valor)
-                guardar_dados(contas, transacoes)  #guardar logo depois da operação
+                guardar_dados(utilizadores, contas, transacoes)  #guardar logo depois da operação
                 print(f"Foi levantado {valor}. Saldo atual: {conta.valor}")
             except ValueError as erro:
                 print(erro)
@@ -60,7 +61,7 @@ def menu_conta(conta, contas, transacoes):
             try:
                 valor = pedir_numero("Valor a depositar: ")
                 conta.depositar(valor)
-                guardar_dados(contas, transacoes)  #guardar logo depois da operação
+                guardar_dados(utilizadores, contas, transacoes)  #guardar logo depois da operação
                 print(f"Foi depositado {valor}. Saldo atual: {conta.valor}")
             except ValueError as erro:
                 print(erro)
@@ -84,7 +85,7 @@ def menu_conta(conta, contas, transacoes):
                 if confirmar == "s":
                     try:
                         transferir(contas, transacoes, conta.username, iban_destino, valor)
-                        guardar_dados(contas, transacoes)  #guardar logo depois da operação
+                        guardar_dados(utilizadores, contas, transacoes)  #guardar logo depois da operação
                         print(f"Foi transferido {valor} para {username_destino}. Saldo atual: {conta.valor}")
                     except UtilizadorInexistenteError as erro:
                         print(erro)
@@ -168,14 +169,26 @@ def menu_conta(conta, contas, transacoes):
                 for erro in erros:
                     print(f" - {erro}")
             else:
-                guardar_dados(contas, transacoes)  #guardar logo depois da operação
+                guardar_dados(utilizadores, contas, transacoes)  #guardar logo depois da operação
                 print(f"Transferências do ficheiro feitas com sucesso. Saldo atual: {conta.valor}")
+            print("")
+        elif opcao == 10:
+            #pesquisar transações desta conta por texto (data, username, IBAN ou valor)
+            pesquisa = input("Pesquisar: ")
+            encontradas = pesquisar_transacoes(transacoes, conta, pesquisa)
+
+            if len(encontradas) == 0:
+                print("Nenhuma transação encontrada.")
+            else:
+                for transacao in encontradas:
+                    print(f"[{transacao.data}] {transacao.username_origem} ({transacao.iban_origem}) -> "
+                          f"{transacao.username_destino} ({transacao.iban_destino}) | {transacao.valor}")
             print("")
         else:
             print("Opção inválida. Tente novamente.\n")
 
 #menu principal do programa
-def menu_principal(contas, transacoes):
+def menu_principal(utilizadores, contas, transacoes):
     while True:
         input_utilizador = pedir_opcao(
             "Introduza um dos seguintes valores:\n"
@@ -185,7 +198,7 @@ def menu_principal(contas, transacoes):
             "Valor: "
         )
         if input_utilizador == 0:
-            guardar_dados(contas, transacoes)  #guardar tudo no banco.db antes de sair
+            guardar_dados(utilizadores, contas, transacoes)  #guardar tudo no banco.db antes de sair
             print("Sair do programa.\n")
             break
         elif input_utilizador == 1:
@@ -193,8 +206,8 @@ def menu_principal(contas, transacoes):
             password = input("Password: ")
 
             try:
-                criar_conta(contas, username, password)
-                guardar_dados(contas, transacoes)  #guardar logo depois de criar
+                criar_utilizador(utilizadores, contas, username, password)
+                guardar_dados(utilizadores, contas, transacoes)  #guardar logo depois de criar
                 print(f"Utilizador {username} criado com sucesso. IBAN: {contas[username].iban}\n")
             except UtilizadorJaExisteError as erro:
                 print(f"{erro}\n")
@@ -205,11 +218,11 @@ def menu_principal(contas, transacoes):
             password = input("Password: ")
 
             try:
-                conta_atual = entrar(contas, username, password)
-                if conta_atual == None:
+                utilizador_atual = entrar(utilizadores, username, password)
+                if utilizador_atual == None:
                     print("Username ou password errados.\n")
                 else:
-                    menu_conta(conta_atual, contas, transacoes)
+                    menu_conta(contas[utilizador_atual.username], utilizadores, contas, transacoes)
             except ContaBloqueadaError as erro:
                 print(f"{erro}\n")
         else:

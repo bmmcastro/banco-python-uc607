@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.modelos import Conta, Transacao
+from banco.modelos import Utilizador, Conta, Transacao
 from banco.dados import ver_bloqueio, anotar_tentativa, limpar_tentativas
 
 #limite de tentativas de login: 3 passwords erradas bloqueiam a conta durante 30 segundos
@@ -60,8 +60,8 @@ def gerar_iban(contas):
 
     return iban
 
-#criar conta nova: levanta erro se não conseguir criar
-def criar_conta(contas, username, password):
+#criar utilizador novo (com a respetiva conta a zeros): levanta erro se não conseguir criar
+def criar_utilizador(utilizadores, contas, username, password):
     if username == "":
         raise ValueError("O username não pode ser vazio")
 
@@ -69,19 +69,20 @@ def criar_conta(contas, username, password):
     if not username.isalnum():
         raise ValueError("O username só pode ter letras e números")
 
-    if username in contas:
+    if username in utilizadores:
         raise UtilizadorJaExisteError("O username já existe no sistema")
 
     if validar_password(password) == False:
         raise ValueError("Password inválida: tem de ter entre 6 a 10 caracteres, com pelo menos 1 letra e 1 número")
 
     iban = gerar_iban(contas)
-    contas[username] = Conta(username, password, 0, iban)  #a conta é criada com valor 0
+    utilizadores[username] = Utilizador(username, password)
+    contas[username] = Conta(username, 0, iban)  #a conta é criada com valor 0
 
-#entrar: devolve a conta se o username e a password estiverem certos, senão None
+#entrar: devolve o utilizador se o username e a password estiverem certos, senão None
 #depois de 3 tentativas erradas a conta fica bloqueada durante 30 segundos
 #(as tentativas são guardadas no banco.db, por isso valem para o terminal e para o site)
-def entrar(contas, username, password):
+def entrar(utilizadores, username, password):
     agora = time.time()
 
     tentativas, bloqueado_ate = ver_bloqueio(username)
@@ -91,10 +92,10 @@ def entrar(contas, username, password):
         restantes = int(bloqueado_ate - agora)
         raise ContaBloqueadaError(f"Muitas tentativas erradas. A conta está bloqueada mais {restantes} segundos")
 
-    if username in contas and contas[username].password == password:
+    if username in utilizadores and utilizadores[username].password == password:
         #login certo: esquecer as tentativas erradas dessa conta
         limpar_tentativas(username)
-        return contas[username]
+        return utilizadores[username]
 
     #login errado: contar a tentativa
     tentativas = tentativas + 1
@@ -203,6 +204,25 @@ def transferir_por_ficheiro(contas, transacoes, username_origem, conteudo):
         transferir(contas, transacoes, username_origem, iban, valor)
 
     return []
+
+#pesquisar as transações de uma conta por texto: a pesquisa pode ser uma data,
+#um username, um IBAN ou um valor; devolve a lista das transações que correspondem
+def pesquisar_transacoes(transacoes, conta, pesquisa):
+    encontradas = []
+
+    for transacao in transacoes:
+        #só interessam as transações onde esta conta consta (enviadas ou recebidas)
+        if transacao.iban_origem != conta.iban and transacao.iban_destino != conta.iban:
+            continue
+
+        #juntar tudo o que se pode pesquisar numa só linha de texto
+        texto = (transacao.data + " " + transacao.username_origem + " " + transacao.iban_origem + " "
+                 + transacao.username_destino + " " + transacao.iban_destino + " " + str(transacao.valor))
+
+        if pesquisa.lower() in texto.lower():
+            encontradas.append(transacao)
+
+    return encontradas
 
 #calcular o valor da conta com juro composto, de forma recursiva
 #cada mês o valor é multiplicado pela taxa, até acabarem os meses

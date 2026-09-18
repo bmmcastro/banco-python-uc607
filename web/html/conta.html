@@ -136,6 +136,10 @@
     <div class="card card-banco p-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <h5 class="fw-bold mb-0">🧾 Histórico de transações</h5>
+            <form id="formPesquisar" class="d-flex gap-2">
+                <input type="text" id="pesquisarTexto" class="form-control form-control-sm" placeholder="Pesquisar (data, nome, IBAN ou valor)">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Pesquisar</button>
+            </form>
             <a href="/api/exportar" class="btn btn-sm btn-outline-secondary">⬇️ Exportar CSV</a>
         </div>
         <div class="table-responsive">

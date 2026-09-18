@@ -1,4 +1,5 @@
 #estruturas do sistema
+import math
 from dataclasses import dataclass
 
 from banco.erros import SaldoInsuficienteError
@@ -17,12 +18,18 @@ class Conta:
     iban: str
 
     def depositar(self, valor):
+        if not math.isfinite(valor):
+            raise ValueError("O valor tem de ser um número válido")
+
         if valor <= 0:
             raise ValueError("O valor do depósito tem de ser positivo")
 
         self.valor = self.valor + valor
 
     def levantar(self, valor):
+        if not math.isfinite(valor):
+            raise ValueError("O valor tem de ser um número válido")
+
         if valor <= 0:
             raise ValueError("O valor do levantamento tem de ser positivo")
 

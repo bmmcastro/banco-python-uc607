@@ -2,6 +2,7 @@
 import os
 import sqlite3
 import csv
+import time
 
 from banco.modelos import Utilizador, Conta, Transacao
 
@@ -80,37 +81,43 @@ def carregar_dados():
     return utilizadores, contas, transacoes
 
 #guardar os dados do sistema no banco.db (apaga o que lá estava e guarda tudo de novo)
+#se a base de dados estiver ocupada (dois pedidos do site ao mesmo tempo), tenta outra vez
 def guardar_dados(utilizadores, contas, transacoes):
-    ligacao = sqlite3.connect("banco.db")
-    cursor = ligacao.cursor()
-    cursor.execute("DELETE FROM utilizadores")
-    cursor.execute("DELETE FROM contas")
-    cursor.execute("DELETE FROM transacoes")
+    for tentativa in range(3):
+        try:
+            ligacao = sqlite3.connect("banco.db")
+            cursor = ligacao.cursor()
+            cursor.execute("DELETE FROM utilizadores")
+            cursor.execute("DELETE FROM contas")
+            cursor.execute("DELETE FROM transacoes")
 
-    for username in utilizadores:
-        utilizador = utilizadores[username]
-        cursor.execute(
-            "INSERT INTO utilizadores (username, password) VALUES (?, ?)",
-            (utilizador.username, utilizador.password)
-        )
+            for username in utilizadores:
+                utilizador = utilizadores[username]
+                cursor.execute(
+                    "INSERT INTO utilizadores (username, password) VALUES (?, ?)",
+                    (utilizador.username, utilizador.password)
+                )
 
-    for username in contas:
-        conta = contas[username]
-        cursor.execute(
-            "INSERT INTO contas (username, valor, iban) VALUES (?, ?, ?)",
-            (conta.username, conta.valor, conta.iban)
-        )
+            for username in contas:
+                conta = contas[username]
+                cursor.execute(
+                    "INSERT INTO contas (username, valor, iban) VALUES (?, ?, ?)",
+                    (conta.username, conta.valor, conta.iban)
+                )
 
-    for transacao in transacoes:
-        cursor.execute(
-            "INSERT INTO transacoes (data, valor, iban_origem, username_origem, iban_destino, username_destino) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (transacao.data, transacao.valor, transacao.iban_origem, transacao.username_origem,
-             transacao.iban_destino, transacao.username_destino)
-        )
+            for transacao in transacoes:
+                cursor.execute(
+                    "INSERT INTO transacoes (data, valor, iban_origem, username_origem, iban_destino, username_destino) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (transacao.data, transacao.valor, transacao.iban_origem, transacao.username_origem,
+                     transacao.iban_destino, transacao.username_destino)
+                )
 
-    ligacao.commit()  #confirmar as alterações no ficheiro
-    ligacao.close()
+            ligacao.commit()  #confirmar as alterações no ficheiro
+            ligacao.close()
+            break
+        except sqlite3.OperationalError:
+            time.sleep(0.2)  #a base de dados estava ocupada, tentar outra vez
 
 #tentativas de login erradas e bloqueios (guardadas na base de dados para
 #funcionarem igual no terminal e no site, mesmo com o servidor a correr em processos separados)

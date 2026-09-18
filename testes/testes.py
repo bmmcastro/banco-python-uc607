@@ -134,6 +134,18 @@ class TestesBanco(unittest.TestCase):
         encontradas = pesquisar_transacoes(self.transacoes, self.contas["bruno"], "zeze")
         self.assertEqual(len(encontradas), 0)
 
+    def test_deposito_com_valor_invalido(self):
+        #infinito e nan não são valores válidos para dinheiro
+        with self.assertRaises(ValueError):
+            self.contas["bruno"].depositar(float("inf"))
+        with self.assertRaises(ValueError):
+            self.contas["bruno"].depositar(float("nan"))
+
+    def test_transferencia_com_valor_invalido(self):
+        #uma transferência com infinito não pode passar
+        with self.assertRaises(ValueError):
+            transferir(self.contas, self.transacoes, "bruno", "PT50 0002", float("inf"))
+
 
 if __name__ == "__main__":
     unittest.main()

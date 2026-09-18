@@ -108,18 +108,6 @@
         </div>
         <div class="col-md-4">
             <div class="card card-banco p-4 h-100">
-                <div class="emoji">📈</div>
-                <h5 class="fw-bold mt-2">Consultar retorno</h5>
-                <form id="formRetorno">
-                    <input type="number" step="0.01" min="0" max="100" id="retornoTaxa" class="form-control mb-2" placeholder="Taxa mensal (%)" required>
-                    <input type="number" min="1" id="retornoMeses" class="form-control mb-2" placeholder="Meses" required>
-                    <button type="submit" class="btn btn-brand w-100">Calcular</button>
-                </form>
-                <div id="resultadoRetorno" class="small mt-2 d-none"></div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card card-banco p-4 h-100">
                 <div class="emoji">📤</div>
                 <h5 class="fw-bold mt-2">Transferir por CSV</h5>
                 <div id="mensagemCsv" class="small mb-2 d-none"></div>
@@ -128,6 +116,18 @@
                     <button type="submit" class="btn btn-brand w-100">Transferir ficheiro</button>
                     <a href="/transferencias_exemplo.csv" class="small d-block text-center mt-2">ver ficheiro de exemplo</a>
                 </form>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-banco p-4 h-100">
+                <div class="emoji">📈</div>
+                <h5 class="fw-bold mt-2">Consultar retorno</h5>
+                <form id="formRetorno">
+                    <input type="number" step="0.01" min="0" max="100" id="retornoTaxa" class="form-control mb-2" placeholder="Taxa mensal (%)" required>
+                    <input type="number" min="1" id="retornoMeses" class="form-control mb-2" placeholder="Meses" required>
+                    <button type="submit" class="btn btn-brand w-100">Calcular</button>
+                </form>
+                <div id="resultadoRetorno" class="small mt-2 d-none"></div>
             </div>
         </div>
     </div>

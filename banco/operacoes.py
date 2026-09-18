@@ -1,5 +1,6 @@
 #funções do banco
 import csv
+import math
 import time
 from datetime import datetime
 
@@ -116,6 +117,9 @@ def transferir(contas, transacoes, username_origem, iban_destino, valor):
 
     if username_destino == username_origem:
         raise ValueError("Não podes transferir para a tua própria conta")
+
+    if not math.isfinite(valor):
+        raise ValueError("O valor tem de ser um número válido")
 
     if valor <= 0:
         raise ValueError("O valor da transferência tem de ser positivo")

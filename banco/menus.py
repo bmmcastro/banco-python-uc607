@@ -11,6 +11,10 @@ def pedir_numero(texto):
             return float(input(texto))
         except ValueError:
             print("Escreva um número.")
+        except (EOFError, KeyboardInterrupt):
+            #ctrl+c ou fim do input: sair do programa de forma limpa
+            print("")
+            return 0
 
 #pedir a opção do menu (número inteiro)
 def pedir_opcao(texto):
@@ -19,6 +23,10 @@ def pedir_opcao(texto):
             return int(input(texto))
         except ValueError:
             print("Escreva um número.")
+        except (EOFError, KeyboardInterrupt):
+            #ctrl+c ou fim do input: sair do programa de forma limpa
+            print("")
+            return 0
 
 #menu depois de entrar na conta
 def menu_conta(conta, utilizadores, contas, transacoes):

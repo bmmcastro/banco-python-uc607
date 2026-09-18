@@ -84,11 +84,13 @@ def ficheiros_icones(ficheiro):
 
 @app.route("/api/entrar", methods=["POST"])
 def api_entrar():
-    dados = request.get_json()
+    dados = request.get_json(silent=True)
     try:
         utilizador = entrar(utilizadores, dados["username"], dados["password"])
     except ContaBloqueadaError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
     if utilizador == None:
         return jsonify({"ok": False, "erro": "Username ou password errados."})
@@ -98,7 +100,7 @@ def api_entrar():
 
 @app.route("/api/registar", methods=["POST"])
 def api_registar():
-    dados = request.get_json()
+    dados = request.get_json(silent=True)
     try:
         criar_utilizador(utilizadores, contas, dados["username"], dados["password"])
         guardar_dados(utilizadores, contas, transacoes)
@@ -107,6 +109,8 @@ def api_registar():
         return jsonify({"ok": False, "erro": str(erro)})
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
 @app.route("/api/sair", methods=["POST"])
 def api_sair():
@@ -142,13 +146,15 @@ def api_levantar():
 
     conta = contas[session["username"]]
     try:
-        conta.levantar(float(request.get_json()["valor"]))
+        conta.levantar(float(request.get_json(silent=True)["valor"]))
         guardar_dados(utilizadores, contas, transacoes)
         return jsonify({"ok": True, "valor": conta.valor})
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
     except SaldoInsuficienteError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
 @app.route("/api/depositar", methods=["POST"])
 def api_depositar():
@@ -157,11 +163,13 @@ def api_depositar():
 
     conta = contas[session["username"]]
     try:
-        conta.depositar(float(request.get_json()["valor"]))
+        conta.depositar(float(request.get_json(silent=True)["valor"]))
         guardar_dados(utilizadores, contas, transacoes)
         return jsonify({"ok": True, "valor": conta.valor})
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
 @app.route("/api/consultar_iban", methods=["POST"])
 def api_consultar_iban():
@@ -169,7 +177,11 @@ def api_consultar_iban():
         return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
 
     #limpar o IBAN recebido (maiúsculas, espaços, PT50 repetido)
-    iban = limpar_iban(request.get_json()["iban"])
+    try:
+        iban = limpar_iban(request.get_json(silent=True)["iban"])
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
+
     username = procurar_por_iban(contas, iban)
 
     if username == None:
@@ -182,7 +194,7 @@ def api_transferir():
     if "username" not in session:
         return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
 
-    dados = request.get_json()
+    dados = request.get_json(silent=True)
     try:
         transferir(contas, transacoes, session["username"], limpar_iban(dados["iban_destino"]), float(dados["valor"]))
         guardar_dados(utilizadores, contas, transacoes)
@@ -193,6 +205,8 @@ def api_transferir():
         return jsonify({"ok": False, "erro": str(erro)})
     except SaldoInsuficienteError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
 #ficheiro de exemplo das transferências por CSV (para o utilizador ver o formato)
 @app.route("/transferencias_exemplo.csv")
@@ -206,7 +220,7 @@ def api_transferencias_ficheiro():
         return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
 
     try:
-        conteudo = request.get_json()["conteudo"]
+        conteudo = request.get_json(silent=True)["conteudo"]
 
         #o ficheiro carregado fica guardado na pasta transferencias (sai quando o utilizador sai)
         guardar_ficheiro_transferencias(session["username"], conteudo)
@@ -214,6 +228,8 @@ def api_transferencias_ficheiro():
         erros = transferir_por_ficheiro(contas, transacoes, session["username"], conteudo)
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
     if len(erros) > 0:
         return jsonify({"ok": False, "erros": erros})
@@ -260,12 +276,14 @@ def api_retorno():
         return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
 
     conta = contas[session["username"]]
-    dados = request.get_json()
+    dados = request.get_json(silent=True)
     try:
         resultado = consultar_retorno(conta.valor, float(dados["taxa"]), int(float(dados["meses"])))
         return jsonify({"ok": True, "resultado": resultado})
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
 @app.route("/api/exportar")
 def api_exportar():

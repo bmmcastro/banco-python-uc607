@@ -13,3 +13,4 @@ venv/
 #publicação
 *.zip
 DEPLOY.md
+_backup_design/

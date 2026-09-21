@@ -2,8 +2,8 @@
 import os
 import unittest
 
-from banco.modelos import Utilizador, Conta
-from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno
+from banco.modelos import Utilizador, Conta, Aplicacao
+from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes
 from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 
@@ -165,6 +165,29 @@ class TestesBanco(unittest.TestCase):
             consultar_retorno(100, 10, 0)
         with self.assertRaises(ValueError):
             consultar_retorno(100, 10, 13)
+
+    def test_aplicar_tira_o_valor_do_saldo(self):
+        #aplicar 50 com saldo 100: o valor sai do saldo e fica cativo
+        aplicacoes = []
+        aplicar_dinheiro(self.contas["bruno"], aplicacoes, 50, 10, 3)
+
+        self.assertEqual(self.contas["bruno"].valor, 50)
+        self.assertEqual(len(aplicacoes), 1)
+
+        #aplicar mais do que o saldo não pode passar
+        with self.assertRaises(SaldoInsuficienteError):
+            aplicar_dinheiro(self.contas["bruno"], aplicacoes, 100, 10, 3)
+
+    def test_aplicacao_no_fim_do_prazo_devolve_com_juros(self):
+        #aplicação com o prazo já passado: o valor volta ao saldo com os juros
+        aplicacao = Aplicacao("bruno", 100, 10, 2, "01/01/2026 10:00")
+        aplicacoes = [aplicacao]
+
+        libertadas = verificar_aplicacoes(self.contas["bruno"], aplicacoes)
+
+        self.assertEqual(len(libertadas), 1)
+        self.assertEqual(len(aplicacoes), 0)  #saiu das ativas
+        self.assertAlmostEqual(self.contas["bruno"].valor, 221.0)  #100 do saldo + 100 * 1,1 * 1,1
 
 
 if __name__ == "__main__":

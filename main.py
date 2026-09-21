@@ -9,7 +9,7 @@ print(pyfiglet.figlet_format("Banco Python UC607"))
 
 #dados do sistema: carregar do ficheiro banco.db
 criar_tabelas()
-utilizadores, contas, transacoes = carregar_dados()
+utilizadores, contas, transacoes, aplicacoes = carregar_dados()
 
 #primeira execução (ficheiro ainda vazio): criar utilizadores de teste para testar as transações
 if len(contas) == 0:
@@ -34,7 +34,7 @@ print(f"Contas no sistema: {contas.keys()}")
 print("")
 
 #menu principal do programa
-menu_principal(utilizadores, contas, transacoes)
+menu_principal(utilizadores, contas, transacoes, aplicacoes)
 
 print(f"Contas no sistema: {contas.keys()}")
 print(f"Transações: {transacoes}")

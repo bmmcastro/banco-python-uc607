@@ -47,3 +47,12 @@ class Transacao:
     username_origem: str
     iban_destino: str
     username_destino: str
+
+
+@dataclass
+class Aplicacao:
+    username: str          #dono da aplicação
+    valor: float           #valor aplicado (fica cativo)
+    taxa: float            #taxa de juro mensal
+    meses: int             #prazo da aplicação
+    data_fim: str          #quando acaba o prazo (dd/mm/aaaa hh:mm)

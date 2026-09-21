@@ -264,6 +264,56 @@ document.getElementById("formPesquisar").addEventListener("submit", function (ev
     carregarHistorico(document.getElementById("pesquisarTexto").value);
 });
 
+//aplicar dinheiro (depósito a prazo): o valor sai do saldo e fica cativo até ao fim do prazo
+document.getElementById("formAplicar").addEventListener("submit", function (evento) {
+    evento.preventDefault();
+    const mensagem = document.getElementById("mensagemAplicar");
+
+    pedirPost("/api/aplicar", {
+        valor: document.getElementById("aplicarValor").value,
+        taxa: document.getElementById("aplicarTaxa").value,
+        meses: document.getElementById("aplicarMeses").value
+    }).then(function (dados) {
+        mensagem.classList.remove("d-none");
+        mensagem.classList.remove("text-success");
+
+        if (dados.ok) {
+            document.getElementById("saldoConta").textContent = euros(dados.valor);
+            mensagem.textContent = "Aplicação feita. O valor fica cativo até ao fim do prazo.";
+            mensagem.classList.add("text-success");
+            document.getElementById("formAplicar").reset();
+            carregarAplicacoes();
+        } else {
+            mensagem.textContent = dados.erro;
+        }
+    });
+});
+
+//as aplicações ativas da conta (o dinheiro cativo)
+function carregarAplicacoes() {
+    pedirGet("/api/aplicacoes").then(function (dados) {
+        const lista = document.getElementById("listaAplicacoes");
+        lista.textContent = "";
+
+        if (dados.aplicacoes.length == 0) {
+            return;
+        }
+
+        const titulo = document.createElement("div");
+        titulo.className = "text-secondary";
+        titulo.textContent = "Aplicações ativas:";
+        lista.appendChild(titulo);
+
+        for (const aplicacao of dados.aplicacoes) {
+            const linha = document.createElement("div");
+            linha.textContent = euros(aplicacao.valor) + " a " + aplicacao.taxa
+                + "% durante " + aplicacao.meses + " meses (até " + aplicacao.data_fim + ")";
+            lista.appendChild(linha);
+        }
+    });
+}
+carregarAplicacoes();
+
 //sair da conta
 document.getElementById("botaoSair").addEventListener("click", function () {
     pedirPost("/api/sair", {}).then(function () {

@@ -5,8 +5,8 @@ from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes
-from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes
+from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes
+from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes
 from banco.relatorio import gerar_relatorio
 
 app = Flask(__name__, static_folder=None)
@@ -15,7 +15,7 @@ app.secret_key = os.environ.get("CHAVE_SECRETA", "banco-python-uc607")
 
 #dados do sistema em memória (iguais aos do main.py)
 criar_tabelas()
-utilizadores, contas, transacoes = carregar_dados()
+utilizadores, contas, transacoes, aplicacoes = carregar_dados()
 
 if len(contas) == 0:
     from banco.modelos import Utilizador, Conta, Transacao
@@ -139,7 +139,52 @@ def api_conta():
         return jsonify({"ok": False})
 
     conta = contas[session["username"]]
+
+    #as aplicações que chegaram ao fim do prazo libertam o dinheiro com os juros
+    libertadas = verificar_aplicacoes(conta, aplicacoes)
+    if len(libertadas) > 0:
+        guardar_dados(utilizadores, contas, transacoes)
+        guardar_aplicacoes(aplicacoes)
+
     return jsonify({"ok": True, "username": conta.username, "iban": conta.iban, "valor": conta.valor})
+
+#as aplicações ativas (depósitos a prazo) da conta
+@app.route("/api/aplicacoes")
+def api_aplicacoes():
+    if "username" not in session:
+        return jsonify({"ok": False, "aplicacoes": []})
+
+    lista = []
+    for aplicacao in aplicacoes:
+        if aplicacao.username == session["username"]:
+            lista.append({
+                "valor": aplicacao.valor,
+                "taxa": aplicacao.taxa,
+                "meses": aplicacao.meses,
+                "data_fim": aplicacao.data_fim,
+            })
+
+    return jsonify({"ok": True, "aplicacoes": lista})
+
+#aplicar dinheiro: o valor sai do saldo e fica cativo até ao fim do prazo
+@app.route("/api/aplicar", methods=["POST"])
+def api_aplicar():
+    if "username" not in session:
+        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+
+    conta = contas[session["username"]]
+    dados = request.get_json(silent=True)
+    try:
+        aplicar_dinheiro(conta, aplicacoes, float(dados["valor"]), float(dados["taxa"]), int(float(dados["meses"])))
+        guardar_dados(utilizadores, contas, transacoes)
+        guardar_aplicacoes(aplicacoes)
+        return jsonify({"ok": True, "valor": conta.valor})
+    except ValueError as erro:
+        return jsonify({"ok": False, "erro": str(erro)})
+    except SaldoInsuficienteError as erro:
+        return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
 @app.route("/api/levantar", methods=["POST"])
 def api_levantar():

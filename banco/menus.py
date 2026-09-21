@@ -1,7 +1,7 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes
-from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes
+from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes
+from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes
 from banco.relatorio import gerar_relatorio
 
 #pedir um número ao utilizador, sem deixar o programa rebentar se escrever letras
@@ -29,8 +29,18 @@ def pedir_opcao(texto):
             return 0
 
 #menu depois de entrar na conta
-def menu_conta(conta, utilizadores, contas, transacoes):
-    print(f"Bem-vindo {conta.username}!\n")
+def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
+    print(f"Bem-vindo {conta.username}!")
+
+    #as aplicações que chegaram ao fim do prazo libertam o dinheiro com os juros
+    libertadas = verificar_aplicacoes(conta, aplicacoes)
+    for aplicacao in libertadas:
+        valor_final = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
+        print(f"Aplicação de {aplicacao.valor} acabou: voltaram {valor_final:.2f} ao saldo")
+    if len(libertadas) > 0:
+        guardar_dados(utilizadores, contas, transacoes)
+        guardar_aplicacoes(aplicacoes)
+    print("")
 
     while True:
         opcao = pedir_opcao(
@@ -46,6 +56,7 @@ def menu_conta(conta, utilizadores, contas, transacoes):
             " 8 - Relatório do sistema\n"
             " 9 - Transferir por ficheiro CSV\n"
             " 10 - Pesquisar transações\n"
+            " 11 - Aplicar dinheiro\n"
             "Valor: "
         )
         if opcao == 0:
@@ -192,11 +203,39 @@ def menu_conta(conta, utilizadores, contas, transacoes):
                     print(f"[{transacao.data}] {transacao.username_origem} ({transacao.iban_origem}) -> "
                           f"{transacao.username_destino} ({transacao.iban_destino}) | {transacao.valor}")
             print("")
+        elif opcao == 11:
+            #aplicar dinheiro: o valor sai do saldo e fica cativo até ao fim do prazo
+            minhas = []
+            for aplicacao in aplicacoes:
+                if aplicacao.username == conta.username:
+                    minhas.append(aplicacao)
+
+            if len(minhas) == 0:
+                print("Não tens aplicações ativas.")
+            else:
+                print("As tuas aplicações ativas:")
+                for aplicacao in minhas:
+                    print(f" - {aplicacao.valor} a {aplicacao.taxa}% durante {aplicacao.meses} meses (até {aplicacao.data_fim})")
+
+            try:
+                valor = pedir_numero("Valor a aplicar: ")
+                taxa = pedir_numero("Taxa de juro mensal (%): ")
+                meses = pedir_numero("Número de meses (1 a 12): ")
+
+                aplicar_dinheiro(conta, aplicacoes, valor, taxa, int(meses))
+                guardar_dados(utilizadores, contas, transacoes)
+                guardar_aplicacoes(aplicacoes)
+                print(f"Aplicação feita. O valor fica cativo até ao fim do prazo. Saldo atual: {conta.valor}")
+            except ValueError as erro:
+                print(erro)
+            except SaldoInsuficienteError as erro:
+                print(erro)
+            print("")
         else:
             print("Opção inválida. Tente novamente.\n")
 
 #menu principal do programa
-def menu_principal(utilizadores, contas, transacoes):
+def menu_principal(utilizadores, contas, transacoes, aplicacoes):
     while True:
         input_utilizador = pedir_opcao(
             "Introduza um dos seguintes valores:\n"
@@ -230,7 +269,7 @@ def menu_principal(utilizadores, contas, transacoes):
                 if utilizador_atual == None:
                     print("Username ou password errados.\n")
                 else:
-                    menu_conta(contas[utilizador_atual.username], utilizadores, contas, transacoes)
+                    menu_conta(contas[utilizador_atual.username], utilizadores, contas, transacoes, aplicacoes)
             except ContaBloqueadaError as erro:
                 print(f"{erro}\n")
             except UtilizadorInexistenteError as erro:

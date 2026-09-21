@@ -4,7 +4,7 @@ import sqlite3
 import csv
 import time
 
-from banco.modelos import Utilizador, Conta, Transacao
+from banco.modelos import Utilizador, Conta, Transacao, Aplicacao
 
 #criar as tabelas no ficheiro banco.db (só cria se ainda não existirem)
 def criar_tabelas():
@@ -39,6 +39,15 @@ def criar_tabelas():
             username TEXT,
             tentativas INTEGER,
             bloqueado_ate REAL
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS aplicacoes (
+            username TEXT,
+            valor REAL,
+            taxa REAL,
+            meses INTEGER,
+            data_fim TEXT
         )
     """)
 
@@ -77,8 +86,14 @@ def carregar_dados():
     ):
         transacoes.append(Transacao(data, valor, iban_origem, username_origem, iban_destino, username_destino))
 
+    aplicacoes = []
+    for username, valor, taxa, meses, data_fim in cursor.execute(
+        "SELECT username, valor, taxa, meses, data_fim FROM aplicacoes"
+    ):
+        aplicacoes.append(Aplicacao(username, valor, taxa, meses, data_fim))
+
     ligacao.close()
-    return utilizadores, contas, transacoes
+    return utilizadores, contas, transacoes, aplicacoes
 
 #guardar os dados do sistema no banco.db (apaga o que lá estava e guarda tudo de novo)
 #se a base de dados estiver ocupada (dois pedidos do site ao mesmo tempo), tenta outra vez
@@ -151,6 +166,21 @@ def limpar_tentativas(username):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
     cursor.execute("DELETE FROM bloqueios WHERE username = ?", (username,))
+    ligacao.commit()
+    ligacao.close()
+
+#guardar as aplicações (depósitos a prazo) no banco.db
+def guardar_aplicacoes(aplicacoes):
+    ligacao = sqlite3.connect("banco.db")
+    cursor = ligacao.cursor()
+    cursor.execute("DELETE FROM aplicacoes")
+
+    for aplicacao in aplicacoes:
+        cursor.execute(
+            "INSERT INTO aplicacoes (username, valor, taxa, meses, data_fim) VALUES (?, ?, ?, ?, ?)",
+            (aplicacao.username, aplicacao.valor, aplicacao.taxa, aplicacao.meses, aplicacao.data_fim)
+        )
+
     ligacao.commit()
     ligacao.close()
 

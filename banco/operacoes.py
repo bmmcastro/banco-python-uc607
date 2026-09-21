@@ -2,10 +2,10 @@
 import csv
 import math
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.modelos import Utilizador, Conta, Transacao
+from banco.modelos import Utilizador, Conta, Transacao, Aplicacao
 from banco.dados import ver_bloqueio, anotar_tentativa, limpar_tentativas
 
 #limite de tentativas de login: 3 passwords erradas bloqueiam a conta durante 30 segundos
@@ -251,3 +251,48 @@ def consultar_retorno(valor, taxa, meses):
         return valor * (1 + taxa / 100)
 
     return consultar_retorno(valor, taxa, meses - 1) * (1 + taxa / 100)
+
+#aplicar dinheiro (depósito a prazo): o valor sai do saldo e fica cativo
+#até ao fim do prazo, quando volta ao saldo com os juros somados
+def aplicar_dinheiro(conta, aplicacoes, valor, taxa, meses):
+    if not math.isfinite(valor) or valor <= 0:
+        raise ValueError("O valor da aplicação tem de ser positivo")
+
+    if valor > conta.valor:
+        raise SaldoInsuficienteError("O valor da aplicação não pode ser maior que o saldo")
+
+    if abs(taxa) > 100:
+        raise ValueError("A taxa de juro tem de ter um valor absoluto entre 0 e 100")
+
+    if meses != int(meses) or meses < 1 or meses > 12:
+        raise ValueError("O número de meses tem de estar entre 1 e 12")
+
+    #o fim do prazo fica registado (cada mês conta-se como 30 dias)
+    fim = datetime.now() + timedelta(days=30 * int(meses))
+    aplicacoes.append(Aplicacao(conta.username, valor, taxa, int(meses), fim.strftime("%d/%m/%Y %H:%M")))
+
+    #o valor aplicado sai do saldo e fica cativo
+    conta.valor = conta.valor - valor
+
+#verificar as aplicações da conta: as que chegaram ao fim do prazo
+#devolvem o dinheiro ao saldo, com os juros calculados pela função recursiva do retorno
+def verificar_aplicacoes(conta, aplicacoes):
+    agora = datetime.now()
+    libertadas = []
+
+    for aplicacao in aplicacoes:
+        if aplicacao.username != conta.username:
+            continue
+
+        fim = datetime.strptime(aplicacao.data_fim, "%d/%m/%Y %H:%M")
+        if fim <= agora:
+            #os juros do prazo todo, com a mesma recursão do consultar_retorno
+            valor_final = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
+            conta.valor = conta.valor + valor_final
+            libertadas.append(aplicacao)
+
+    #as libertadas saem da lista das aplicações ativas
+    for aplicacao in libertadas:
+        aplicacoes.remove(aplicacao)
+
+    return libertadas

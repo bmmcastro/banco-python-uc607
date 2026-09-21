@@ -81,6 +81,7 @@ def criar_utilizador(utilizadores, contas, username, password):
     contas[username] = Conta(username, 0, iban)  #a conta é criada com valor 0
 
 #entrar: devolve o utilizador se o username e a password estiverem certos, senão None
+#levanta a UtilizadorInexistenteError se o username não existir no sistema
 #depois de 3 tentativas erradas a conta fica bloqueada durante 30 segundos
 #(as tentativas são guardadas no banco.db, por isso valem para o terminal e para o site)
 def entrar(utilizadores, username, password):
@@ -93,7 +94,11 @@ def entrar(utilizadores, username, password):
         restantes = int(bloqueado_ate - agora)
         raise ContaBloqueadaError(f"Muitas tentativas erradas. A conta está bloqueada mais {restantes} segundos")
 
-    if username in utilizadores and utilizadores[username].password == password:
+    #entrar com um username que não existe
+    if username not in utilizadores:
+        raise UtilizadorInexistenteError("O username não existe no sistema")
+
+    if utilizadores[username].password == password:
         #login certo: esquecer as tentativas erradas dessa conta
         limpar_tentativas(username)
         return utilizadores[username]

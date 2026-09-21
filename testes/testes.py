@@ -21,7 +21,8 @@ class TestesBanco(unittest.TestCase):
         self.contas["ana"] = Conta("ana", 200, "PT50 0002")
 
         #limpar as tentativas de login para cada teste começar igual
-        limpar_tentativas("brunoteste")
+        limpar_tentativas("bruno")
+        limpar_tentativas("ana")
 
     def test_utilizador_duplicado(self):
         #criar um utilizador que já existe tem de dar erro
@@ -50,17 +51,17 @@ class TestesBanco(unittest.TestCase):
 
     def test_bloqueio_depois_de_tentativas_erradas(self):
         #a terceira password errada bloqueia a conta
-        entrar(self.utilizadores, "brunoteste", "errada1")
-        entrar(self.utilizadores, "brunoteste", "errada2")
+        entrar(self.utilizadores, "ana", "errada1")
+        entrar(self.utilizadores, "ana", "errada2")
         with self.assertRaises(ContaBloqueadaError):
-            entrar(self.utilizadores, "brunoteste", "errada3")
+            entrar(self.utilizadores, "ana", "errada3")
 
         #bloqueada: o login não entra, nem com outra password
         with self.assertRaises(ContaBloqueadaError):
-            entrar(self.utilizadores, "brunoteste", "outra")
+            entrar(self.utilizadores, "ana", "ana123")
 
-        #arranjar o utilizador de teste para os próximos testes
-        limpar_tentativas("brunoteste")
+        #arranjar a utilizadora para os próximos testes
+        limpar_tentativas("ana")
 
     def test_login_certo_reseta_as_tentativas(self):
         #um login certo esquece as tentativas erradas anteriores
@@ -68,6 +69,11 @@ class TestesBanco(unittest.TestCase):
         entrar(self.utilizadores, "bruno", "errada2")
         utilizador = entrar(self.utilizadores, "bruno", "bruno123")
         self.assertEqual(utilizador.username, "bruno")
+
+    def test_entrar_com_username_inexistente(self):
+        #tentar entrar com um username que não existe lança a exceção
+        with self.assertRaises(UtilizadorInexistenteError):
+            entrar(self.utilizadores, "zeza", "qualquer123")
 
     def test_criar_utilizador_cria_conta_com_iban(self):
         #criar um utilizador cria também a conta a zeros com um IBAN único

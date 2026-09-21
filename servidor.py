@@ -89,6 +89,8 @@ def api_entrar():
         utilizador = entrar(utilizadores, dados["username"], dados["password"])
     except ContaBloqueadaError as erro:
         return jsonify({"ok": False, "erro": str(erro)})
+    except UtilizadorInexistenteError as erro:
+        return jsonify({"ok": False, "erro": str(erro)})
     except (KeyError, TypeError):
         return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 

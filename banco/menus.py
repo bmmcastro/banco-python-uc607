@@ -233,5 +233,7 @@ def menu_principal(utilizadores, contas, transacoes):
                     menu_conta(contas[utilizador_atual.username], utilizadores, contas, transacoes)
             except ContaBloqueadaError as erro:
                 print(f"{erro}\n")
+            except UtilizadorInexistenteError as erro:
+                print(f"{erro}\n")
         else:
             print("Opção inválida. Tente novamente.\n")

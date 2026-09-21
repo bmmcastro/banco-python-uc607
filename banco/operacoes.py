@@ -94,9 +94,9 @@ def entrar(utilizadores, username, password):
         restantes = int(bloqueado_ate - agora)
         raise ContaBloqueadaError(f"Muitas tentativas erradas. A conta está bloqueada mais {restantes} segundos")
 
-    #entrar com um username que não existe
+    #entrar com um username que não existe (a mensagem não revela qual dos dois está errado)
     if username not in utilizadores:
-        raise UtilizadorInexistenteError("O username não existe no sistema")
+        raise UtilizadorInexistenteError("Username ou password errados")
 
     if utilizadores[username].password == password:
         #login certo: esquecer as tentativas erradas dessa conta

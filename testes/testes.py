@@ -3,7 +3,7 @@ import os
 import unittest
 
 from banco.modelos import Utilizador, Conta
-from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes
+from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno
 from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 
@@ -151,6 +151,20 @@ class TestesBanco(unittest.TestCase):
         #uma transferência com infinito não pode passar
         with self.assertRaises(ValueError):
             transferir(self.contas, self.transacoes, "bruno", "PT50 0002", float("inf"))
+
+    def test_retorno_com_taxa_negativa(self):
+        #a taxa pode ser negativa (entre -100 e 100) e diminui o valor
+        resultado = consultar_retorno(200, -50, 2)
+        self.assertAlmostEqual(resultado, 50.0)  #200 * 0,5 * 0,5
+
+    def test_retorno_valida_taxa_e_meses(self):
+        #a taxa fora do valor absoluto 0-100 e os meses fora de 1-12 dão erro
+        with self.assertRaises(ValueError):
+            consultar_retorno(100, -101, 5)
+        with self.assertRaises(ValueError):
+            consultar_retorno(100, 10, 0)
+        with self.assertRaises(ValueError):
+            consultar_retorno(100, 10, 13)
 
 
 if __name__ == "__main__":

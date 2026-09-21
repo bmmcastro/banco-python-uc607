@@ -235,18 +235,19 @@ def pesquisar_transacoes(transacoes, conta, pesquisa):
 
 #calcular o valor da conta com juro composto, de forma recursiva
 #cada mês o valor é multiplicado pela taxa, até acabarem os meses
+#a taxa pode ser negativa ou positiva: só o valor absoluto tem de ficar entre 0 e 100
 def consultar_retorno(valor, taxa, meses):
-    if taxa < 0 or taxa > 100:
-        raise ValueError("A taxa de juro tem de ser um valor entre 0 e 100")
+    if abs(taxa) > 100:
+        raise ValueError("A taxa de juro tem de ter um valor absoluto entre 0 e 100")
 
     if meses != int(meses):
         raise ValueError("O número de meses tem de ser um número inteiro")
 
-    if meses < 0:
-        raise ValueError("O número de meses tem de ser positivo")
+    if meses < 1 or meses > 12:
+        raise ValueError("O número de meses tem de estar entre 1 e 12")
 
-    #caso base: sem meses já não há juros
-    if meses == 0:
-        return valor
+    #caso base: no último mês o valor já rende uma vez
+    if meses == 1:
+        return valor * (1 + taxa / 100)
 
     return consultar_retorno(valor, taxa, meses - 1) * (1 + taxa / 100)

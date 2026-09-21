@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes
-from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes
+from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.relatorio import gerar_relatorio
 
 app = Flask(__name__, static_folder=None)
@@ -142,6 +142,8 @@ def api_conta():
 
     #as aplicações que chegaram ao fim do prazo libertam o dinheiro com os juros
     libertadas = verificar_aplicacoes(conta, aplicacoes)
+    for aplicacao in libertadas:
+        guardar_no_historico(aplicacao)
     if len(libertadas) > 0:
         guardar_dados(utilizadores, contas, transacoes)
         guardar_aplicacoes(aplicacoes)
@@ -157,14 +159,27 @@ def api_aplicacoes():
     lista = []
     for aplicacao in aplicacoes:
         if aplicacao.username == session["username"]:
+            retorno = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
             lista.append({
                 "valor": aplicacao.valor,
                 "taxa": aplicacao.taxa,
                 "meses": aplicacao.meses,
+                "retorno": retorno,
                 "data_fim": aplicacao.data_fim,
             })
 
-    return jsonify({"ok": True, "aplicacoes": lista})
+    #o histórico das aplicações que já terminaram
+    historico = []
+    for aplicacao in listar_historico_aplicacoes(session["username"]):
+        historico.append({
+            "valor": aplicacao.valor,
+            "taxa": aplicacao.taxa,
+            "meses": aplicacao.meses,
+            "valor_final": aplicacao.valor_final,
+            "data_fim": aplicacao.data_fim,
+        })
+
+    return jsonify({"ok": True, "aplicacoes": lista, "historico": historico})
 
 #aplicar dinheiro: o valor sai do saldo e fica cativo até ao fim do prazo
 @app.route("/api/aplicar", methods=["POST"])

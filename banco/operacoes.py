@@ -289,6 +289,7 @@ def verificar_aplicacoes(conta, aplicacoes):
             #os juros do prazo todo, com a mesma recursão do consultar_retorno
             valor_final = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
             conta.valor = conta.valor + valor_final
+            aplicacao.valor_final = valor_final   #para o histórico das aplicações
             libertadas.append(aplicacao)
 
     #as libertadas saem da lista das aplicações ativas

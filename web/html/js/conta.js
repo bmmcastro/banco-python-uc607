@@ -289,26 +289,40 @@ document.getElementById("formAplicar").addEventListener("submit", function (even
     });
 });
 
-//as aplicações ativas da conta (o dinheiro cativo)
+//as aplicações ativas da conta (o dinheiro cativo) e o histórico das terminadas
 function carregarAplicacoes() {
     pedirGet("/api/aplicacoes").then(function (dados) {
         const lista = document.getElementById("listaAplicacoes");
         lista.textContent = "";
 
-        if (dados.aplicacoes.length == 0) {
-            return;
+        if (dados.aplicacoes.length > 0) {
+            const titulo = document.createElement("div");
+            titulo.className = "text-secondary";
+            titulo.textContent = "Aplicações ativas:";
+            lista.appendChild(titulo);
+
+            for (const aplicacao of dados.aplicacoes) {
+                const linha = document.createElement("div");
+                linha.textContent = euros(aplicacao.valor) + " | " + aplicacao.taxa + "% | "
+                    + aplicacao.meses + " meses | retorno " + euros(aplicacao.retorno)
+                    + " | até " + aplicacao.data_fim;
+                lista.appendChild(linha);
+            }
         }
 
-        const titulo = document.createElement("div");
-        titulo.className = "text-secondary";
-        titulo.textContent = "Aplicações ativas:";
-        lista.appendChild(titulo);
+        if (dados.historico.length > 0) {
+            const titulo = document.createElement("div");
+            titulo.className = "text-secondary mt-2";
+            titulo.textContent = "Histórico (terminadas):";
+            lista.appendChild(titulo);
 
-        for (const aplicacao of dados.aplicacoes) {
-            const linha = document.createElement("div");
-            linha.textContent = euros(aplicacao.valor) + " a " + aplicacao.taxa
-                + "% durante " + aplicacao.meses + " meses (até " + aplicacao.data_fim + ")";
-            lista.appendChild(linha);
+            for (const aplicacao of dados.historico) {
+                const linha = document.createElement("div");
+                linha.textContent = euros(aplicacao.valor) + " | " + aplicacao.taxa + "% | "
+                    + aplicacao.meses + " meses | recebeu " + euros(aplicacao.valor_final)
+                    + " | terminou a " + aplicacao.data_fim;
+                lista.appendChild(linha);
+            }
         }
     });
 }

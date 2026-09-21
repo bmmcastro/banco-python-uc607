@@ -50,6 +50,16 @@ def criar_tabelas():
             data_fim TEXT
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS historico_aplicacoes (
+            username TEXT,
+            valor REAL,
+            taxa REAL,
+            meses INTEGER,
+            data_fim TEXT,
+            valor_final REAL
+        )
+    """)
 
     ligacao.commit()
     ligacao.close()
@@ -168,6 +178,35 @@ def limpar_tentativas(username):
     cursor.execute("DELETE FROM bloqueios WHERE username = ?", (username,))
     ligacao.commit()
     ligacao.close()
+
+#histórico das aplicações: as que já chegaram ao fim do prazo ficam registadas aqui
+
+#guardar uma aplicação terminada no histórico
+def guardar_no_historico(aplicacao):
+    ligacao = sqlite3.connect("banco.db")
+    cursor = ligacao.cursor()
+    cursor.execute(
+        "INSERT INTO historico_aplicacoes (username, valor, taxa, meses, data_fim, valor_final) VALUES (?, ?, ?, ?, ?, ?)",
+        (aplicacao.username, aplicacao.valor, aplicacao.taxa, aplicacao.meses, aplicacao.data_fim, aplicacao.valor_final)
+    )
+    ligacao.commit()
+    ligacao.close()
+
+#listar o histórico de aplicações de um utilizador
+def listar_historico_aplicacoes(username):
+    ligacao = sqlite3.connect("banco.db")
+    cursor = ligacao.cursor()
+
+    historico = []
+    for username_h, valor, taxa, meses, data_fim, valor_final in cursor.execute(
+        "SELECT username, valor, taxa, meses, data_fim, valor_final FROM historico_aplicacoes WHERE username = ?",
+        (username,)
+    ):
+        aplicacao = Aplicacao(username_h, valor, taxa, meses, data_fim, valor_final)
+        historico.append(aplicacao)
+
+    ligacao.close()
+    return historico
 
 #guardar as aplicações (depósitos a prazo) no banco.db
 def guardar_aplicacoes(aplicacoes):

@@ -56,3 +56,4 @@ class Aplicacao:
     taxa: float            #taxa de juro mensal
     meses: int             #prazo da aplicação
     data_fim: str          #quando acaba o prazo (dd/mm/aaaa hh:mm)
+    valor_final: float = None   #quanto rendeu (só fica preenchido no histórico)

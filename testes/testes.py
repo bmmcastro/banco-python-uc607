@@ -4,7 +4,7 @@ import unittest
 
 from banco.modelos import Utilizador, Conta, Aplicacao
 from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes
-from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes
+from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 
 
@@ -188,6 +188,25 @@ class TestesBanco(unittest.TestCase):
         self.assertEqual(len(libertadas), 1)
         self.assertEqual(len(aplicacoes), 0)  #saiu das ativas
         self.assertAlmostEqual(self.contas["bruno"].valor, 221.0)  #100 do saldo + 100 * 1,1 * 1,1
+
+    def test_aplicacao_libertada_fica_no_historico(self):
+        #quando liberta, o valor_final fica preenchido e a aplicação entra no histórico
+        aplicacao = Aplicacao("ana", 200, -50, 2, "01/01/2026 10:00")
+
+        libertadas = verificar_aplicacoes(self.contas["ana"], [aplicacao])
+        self.assertAlmostEqual(libertadas[0].valor_final, 50.0)  #200 * 0,5 * 0,5
+
+        guardar_no_historico(libertadas[0])
+        historico = listar_historico_aplicacoes("ana")
+        self.assertEqual(len(historico), 1)
+        self.assertAlmostEqual(historico[0].valor_final, 50.0)
+
+        #arranjar para os próximos testes
+        import sqlite3
+        ligacao = sqlite3.connect("banco.db")
+        ligacao.execute("DELETE FROM historico_aplicacoes WHERE username = 'ana'")
+        ligacao.commit()
+        ligacao.close()
 
 
 if __name__ == "__main__":

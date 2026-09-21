@@ -1,7 +1,7 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes
-from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes
+from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.relatorio import gerar_relatorio
 
 #pedir um número ao utilizador, sem deixar o programa rebentar se escrever letras
@@ -35,8 +35,8 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
     #as aplicações que chegaram ao fim do prazo libertam o dinheiro com os juros
     libertadas = verificar_aplicacoes(conta, aplicacoes)
     for aplicacao in libertadas:
-        valor_final = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
-        print(f"Aplicação de {aplicacao.valor} acabou: voltaram {valor_final:.2f} ao saldo")
+        print(f"Aplicação de {aplicacao.valor} acabou: voltaram {aplicacao.valor_final:.2f} ao saldo")
+        guardar_no_historico(aplicacao)
     if len(libertadas) > 0:
         guardar_dados(utilizadores, contas, transacoes)
         guardar_aplicacoes(aplicacoes)
@@ -204,7 +204,7 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                           f"{transacao.username_destino} ({transacao.iban_destino}) | {transacao.valor}")
             print("")
         elif opcao == 11:
-            #aplicar dinheiro: o valor sai do saldo e fica cativo até ao fim do prazo
+            #menu das aplicações: as ativas (com o retorno previsto) e o histórico das terminadas
             minhas = []
             for aplicacao in aplicacoes:
                 if aplicacao.username == conta.username:
@@ -213,9 +213,24 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
             if len(minhas) == 0:
                 print("Não tens aplicações ativas.")
             else:
-                print("As tuas aplicações ativas:")
+                print("Aplicações ativas:")
                 for aplicacao in minhas:
-                    print(f" - {aplicacao.valor} a {aplicacao.taxa}% durante {aplicacao.meses} meses (até {aplicacao.data_fim})")
+                    retorno = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
+                    print(f" - {aplicacao.valor} | {aplicacao.taxa}% | {aplicacao.meses} meses | "
+                          f"retorno {retorno:.2f} | até {aplicacao.data_fim}")
+
+            historico = listar_historico_aplicacoes(conta.username)
+            if len(historico) > 0:
+                print("Histórico (aplicações terminadas):")
+                for aplicacao in historico:
+                    print(f" - {aplicacao.valor} | {aplicacao.taxa}% | {aplicacao.meses} meses | "
+                          f"recebeu {aplicacao.valor_final:.2f} | terminou a {aplicacao.data_fim}")
+
+            #perguntar se quer fazer uma aplicação nova
+            quero = input("Queres fazer uma aplicação? (s/n): ")
+            if quero != "s":
+                print("")
+                continue
 
             try:
                 valor = pedir_numero("Valor a aplicar: ")

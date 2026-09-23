@@ -1,6 +1,6 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes
+from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao
 from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
@@ -262,8 +262,10 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                 print("Aplicações ativas:")
                 for aplicacao in minhas:
                     retorno = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
+                    valor_hoje, dias_restantes = situacao_aplicacao(aplicacao)
                     print(f" - {aplicacao.valor} | {aplicacao.taxa}% | {aplicacao.meses} meses | "
-                          f"retorno {retorno:.2f} | até {aplicacao.data_fim}")
+                          f"hoje vale {valor_hoje:.2f} | faltam {dias_restantes} dias | "
+                          f"retorno final {retorno:.2f} | até {aplicacao.data_fim}")
 
             historico = listar_historico_aplicacoes(conta.username)
             if len(historico) > 0:

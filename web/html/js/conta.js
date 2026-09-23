@@ -331,8 +331,8 @@ function carregarAplicacoes() {
             for (const aplicacao of dados.aplicacoes) {
                 const linha = document.createElement("div");
                 linha.textContent = euros(aplicacao.valor) + " | " + aplicacao.taxa + "% | "
-                    + aplicacao.meses + " meses | retorno " + euros(aplicacao.retorno)
-                    + " | até " + aplicacao.data_fim;
+                    + aplicacao.meses + " meses | hoje vale " + euros(aplicacao.valor_hoje)
+                    + " | faltam " + aplicacao.dias_restantes + " dias (até " + aplicacao.data_fim + ")";
                 lista.appendChild(linha);
             }
         }

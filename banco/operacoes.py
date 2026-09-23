@@ -274,6 +274,34 @@ def aplicar_dinheiro(conta, aplicacoes, valor, taxa, meses):
     #o valor aplicado sai do saldo e fica cativo
     conta.valor = conta.valor - valor
 
+#quanto vale hoje uma aplicação (os juros já corridos) e quantos dias faltam para o fim
+def situacao_aplicacao(aplicacao):
+    fim = datetime.strptime(aplicacao.data_fim, "%d/%m/%Y %H:%M")
+    agora = datetime.now()
+
+    #a aplicação começou meses*30 dias antes do fim do prazo
+    inicio = fim - timedelta(days=30 * aplicacao.meses)
+
+    #os meses completos que já passaram (entre 0 e o prazo todo)
+    dias_passados = (agora - inicio).days
+    meses_passados = dias_passados // 30
+    if meses_passados < 0:
+        meses_passados = 0
+    if meses_passados > aplicacao.meses:
+        meses_passados = aplicacao.meses
+
+    #o valor de hoje usa a mesma recursão do retorno (sem meses ainda não há juros)
+    if meses_passados == 0:
+        valor_hoje = aplicacao.valor
+    else:
+        valor_hoje = consultar_retorno(aplicacao.valor, aplicacao.taxa, meses_passados)
+
+    dias_restantes = (fim - agora).days
+    if dias_restantes < 0:
+        dias_restantes = 0
+
+    return valor_hoje, dias_restantes
+
 #verificar as aplicações da conta: as que chegaram ao fim do prazo
 #devolvem o dinheiro ao saldo, com os juros calculados pela função recursiva do retorno
 def verificar_aplicacoes(conta, aplicacoes):

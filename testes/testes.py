@@ -3,7 +3,7 @@ import os
 import unittest
 
 from banco.modelos import Utilizador, Conta, Aplicacao
-from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes
+from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao
 from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.relatorio import relatorio_contas, relatorio_transferencias
@@ -228,6 +228,19 @@ class TestesBanco(unittest.TestCase):
         self.assertEqual(resultado["mais_recebeu"], [15, ["ana"]])
         self.assertEqual(resultado["mais_enviou"], [15, ["bruno"]])
         self.assertEqual(resultado["total"], 18)
+
+    def test_situacao_aplicacao(self):
+        #uma aplicação a meio do prazo: já rendeu os meses passados e faltam os dias restantes
+        from datetime import datetime, timedelta
+        fim = datetime.now() + timedelta(days=40)
+        aplicacao = Aplicacao("bruno", 100, 10, 3, fim.strftime("%d/%m/%Y %H:%M"))
+
+        valor_hoje, dias_restantes = situacao_aplicacao(aplicacao)
+
+        #começou há 50 dias (90 - 40): passou 1 mês completo, já rendeu uma vez
+        self.assertAlmostEqual(valor_hoje, 110.0)
+        #39 e não 40: a data guardada não tem segundos, fica um pouco atrás
+        self.assertEqual(dias_restantes, 39)
 
 
 if __name__ == "__main__":

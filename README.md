@@ -1,6 +1,6 @@
 # Banco Python UC607
 
-Sistema de transferências bancárias com **duas interfaces a partilhar a mesma lógica**: um programa de terminal e um site web. Cada utilizador tem username e password, a sua conta tem um IBAN único, e o sistema suporta depósitos, levantamentos, transferências por IBAN com confirmação do destinatário, transferências em lote por ficheiro CSV (iban, nome, valor) com validação de tudo antes de executar, histórico com exportação para CSV e pesquisa por data, nome, IBAN ou valor, relatório do sistema com threads e cálculo de retorno com juro composto (recursivo).
+Sistema de transferências bancárias com **duas interfaces a partilhar a mesma lógica**: um programa de terminal e um site web. Cada utilizador tem username e password, a sua conta tem um IBAN único, e o sistema suporta depósitos, levantamentos, transferências por IBAN com confirmação do destinatário, transferências em lote por ficheiro CSV (iban, nome, valor) com validação de tudo antes de executar, histórico com exportação para CSV e pesquisa por data, nome, IBAN ou valor, relatório do sistema com threads (tabela ordenada por valor) e processos (maior/menor saldo, quem mais recebeu/enviou e somas totais), aplicações a prazo com valor cativo, e cálculo de retorno com juro composto (recursivo).
 
 Projeto final da formação **UC00607 — Desenvolver Programas Complexos em Linguagem Estruturada**.
 A linguagem de programação principal usada é o Python.

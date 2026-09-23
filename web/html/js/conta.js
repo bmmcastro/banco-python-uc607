@@ -238,6 +238,33 @@ function carregarRelatorio() {
         const corpo = document.getElementById("corpoRelatorio");
         corpo.textContent = "";
 
+        //as estatísticas (calculadas em dois processos no servidor)
+        const estatisticas = document.getElementById("estatisticasRelatorio");
+        estatisticas.textContent = "";
+
+        if (dados.estatisticas != undefined) {
+            const contas = dados.estatisticas.contas;
+            const transferencias = dados.estatisticas.transferencias;
+
+            if (contas.maior != null) {
+                const linha = document.createElement("div");
+                linha.textContent = "💰 Maior saldo: " + contas.maior[1].join(", ") + " (" + euros(contas.maior[0])
+                    + ") | Menor: " + contas.menor[1].join(", ") + " (" + euros(contas.menor[0])
+                    + ") | Soma de todos os saldos: " + euros(contas.soma);
+                estatisticas.appendChild(linha);
+            }
+
+            if (transferencias.mais_recebeu != null) {
+                const linha = document.createElement("div");
+                linha.textContent = "🔁 Quem mais recebeu: " + transferencias.mais_recebeu[1].join(", ")
+                    + " (" + euros(transferencias.mais_recebeu[0])
+                    + ") | Quem mais enviou: " + transferencias.mais_enviou[1].join(", ")
+                    + " (" + euros(transferencias.mais_enviou[0])
+                    + ") | Total transferido: " + euros(transferencias.total);
+                estatisticas.appendChild(linha);
+            }
+        }
+
         for (const linha of dados.relatorio) {
             const tr = document.createElement("tr");
 

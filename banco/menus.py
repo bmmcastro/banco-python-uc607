@@ -2,7 +2,7 @@
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes
 from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
-from banco.relatorio import gerar_relatorio
+from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
 #pedir um número ao utilizador, sem deixar o programa rebentar se escrever letras
 def pedir_numero(texto):
@@ -161,11 +161,32 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                 print(erro)
             print("")
         elif opcao == 8:
-            #relatório do sistema: todas as contas ordenadas pelo valor atual
-            relatorio = gerar_relatorio(contas, transacoes)
+            #relatório do sistema: as estatísticas correm em dois processos
+            #(um analisa as contas, outro as transferências)
+            stats_contas, stats_transf = gerar_relatorio_processos(contas, transacoes)
 
             print("")
             print("Relatório do sistema")
+            print("----------------------------------------")
+
+            if stats_contas["maior"] == None:
+                print("Contas: ainda não há contas no sistema")
+            else:
+                print("Contas:")
+                print(f" - maior saldo: {', '.join(stats_contas['maior'][1])} ({stats_contas['maior'][0]})")
+                print(f" - menor saldo: {', '.join(stats_contas['menor'][1])} ({stats_contas['menor'][0]})")
+                print(f" - soma de todos os saldos: {stats_contas['soma']}")
+
+            if stats_transf["mais_recebeu"] == None:
+                print("Transferências: ainda não há transferências no sistema")
+            else:
+                print("Transferências:")
+                print(f" - quem mais recebeu: {', '.join(stats_transf['mais_recebeu'][1])} ({stats_transf['mais_recebeu'][0]})")
+                print(f" - quem mais enviou: {', '.join(stats_transf['mais_enviou'][1])} ({stats_transf['mais_enviou'][0]})")
+                print(f" - total transferido: {stats_transf['total']}")
+
+            #a tabela com todas as contas, ordenada pelo valor atual
+            relatorio = gerar_relatorio(contas, transacoes)
             print("----------------------------------------")
             print("Username | Transferências | Valor atual")
             print("----------------------------------------")

@@ -6,6 +6,7 @@ from banco.modelos import Utilizador, Conta, Aplicacao
 from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes
 from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
+from banco.relatorio import relatorio_contas, relatorio_transferencias
 
 
 class TestesBanco(unittest.TestCase):
@@ -207,6 +208,26 @@ class TestesBanco(unittest.TestCase):
         ligacao.execute("DELETE FROM historico_aplicacoes WHERE username = 'ana'")
         ligacao.commit()
         ligacao.close()
+
+    def test_relatorio_contas(self):
+        #maior saldo, menor saldo e soma de todos os saldos
+        resultado = relatorio_contas(self.contas)
+
+        self.assertEqual(resultado["maior"], [200, ["ana"]])
+        self.assertEqual(resultado["menor"], [100, ["bruno"]])
+        self.assertEqual(resultado["soma"], 300)
+
+    def test_relatorio_transferencias(self):
+        #quem mais recebeu, quem mais enviou e o total transferido
+        transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 10)
+        transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 5)
+        transferir(self.contas, self.transacoes, "ana", "PT50 0001", 3)
+
+        resultado = relatorio_transferencias(self.transacoes)
+
+        self.assertEqual(resultado["mais_recebeu"], [15, ["ana"]])
+        self.assertEqual(resultado["mais_enviou"], [15, ["bruno"]])
+        self.assertEqual(resultado["total"], 18)
 
 
 if __name__ == "__main__":

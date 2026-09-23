@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify, session, send_file, send_from_directo
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes
 from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
-from banco.relatorio import gerar_relatorio
+from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
 app = Flask(__name__, static_folder=None)
 #a chave das sessões vem do servidor (CHAVE_SECRETA no .htaccess); em local usa-se a chave de teste
@@ -330,7 +330,14 @@ def api_relatorio():
     if "username" not in session:
         return jsonify({"ok": False, "relatorio": []})
 
-    return jsonify({"ok": True, "relatorio": gerar_relatorio(contas, transacoes)})
+    #as estatísticas correm em dois processos (contas e transferências)
+    stats_contas, stats_transf = gerar_relatorio_processos(contas, transacoes)
+
+    return jsonify({
+        "ok": True,
+        "relatorio": gerar_relatorio(contas, transacoes),
+        "estatisticas": {"contas": stats_contas, "transferencias": stats_transf},
+    })
 
 @app.route("/api/retorno", methods=["POST"])
 def api_retorno():

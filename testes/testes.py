@@ -1,6 +1,8 @@
 #testes ao sistema (correr com: python testes.py)
 import os
+import sqlite3
 import unittest
+from datetime import datetime, timedelta
 
 from banco.modelos import Utilizador, Conta, Aplicacao
 from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
@@ -207,7 +209,6 @@ class TestesBanco(unittest.TestCase):
         self.assertAlmostEqual(historico[0].valor_final, 50.0)
 
         #arranjar para os próximos testes
-        import sqlite3
         ligacao = sqlite3.connect("banco.db")
         ligacao.execute("DELETE FROM historico_aplicacoes WHERE username = 'ana'")
         ligacao.commit()
@@ -235,7 +236,6 @@ class TestesBanco(unittest.TestCase):
 
     def test_situacao_aplicacao(self):
         #uma aplicação a meio do prazo: já rendeu os meses passados e faltam os dias restantes
-        from datetime import datetime, timedelta
         fim = datetime.now() + timedelta(days=40)
         aplicacao = Aplicacao("bruno", 100, 10, 3, fim.strftime("%d/%m/%Y %H:%M"))
 
@@ -248,7 +248,6 @@ class TestesBanco(unittest.TestCase):
 
     def test_cancelar_aplicacao_devolve_o_ganho(self):
         #cancelar a meio: o valor de hoje volta ao saldo e sai das ativas
-        from datetime import datetime, timedelta
         fim = datetime.now() + timedelta(days=40)
         aplicacao = Aplicacao("bruno", 100, 10, 3, fim.strftime("%d/%m/%Y %H:%M"))
         aplicacoes = [aplicacao]

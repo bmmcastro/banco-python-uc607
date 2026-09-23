@@ -1,5 +1,13 @@
-#testes ao sistema (correr com: python testes.py)
+#testes ao sistema (correr com: python -m testes.testes a partir da pasta do projeto)
 import os
+import sys
+
+#garantir que a pasta do projeto está no caminho do Python,
+#para os testes correrem bem mesmo quando são arrancados de outra pasta
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#e trabalhar sempre a partir da pasta do projeto (onde vivem o banco.db e as pastas)
+os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import sqlite3
 import unittest
 from datetime import datetime, timedelta

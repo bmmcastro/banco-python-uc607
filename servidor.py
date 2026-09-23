@@ -350,7 +350,7 @@ def api_retorno():
     conta = contas[session["username"]]
     dados = request.get_json(silent=True)
     try:
-        resultado = consultar_retorno(conta.valor, float(dados["taxa"]), int(float(dados["meses"])))
+        resultado = consultar_retorno(float(dados["valor"]), float(dados["taxa"]), int(float(dados["meses"])))
         return jsonify({"ok": True, "resultado": resultado})
     except ValueError as erro:
         return jsonify({"ok": False, "erro": str(erro)})

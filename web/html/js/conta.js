@@ -169,16 +169,17 @@ document.getElementById("formCsv").addEventListener("submit", function (evento) 
     leitor.readAsText(ficheiro);
 });
 
-//consultar o retorno (juro composto)
+//simular o retorno (juro composto) de um valor à escolha
 document.getElementById("formRetorno").addEventListener("submit", function (evento) {
     evento.preventDefault();
+    const valor = document.getElementById("retornoValor").value;
     const taxa = document.getElementById("retornoTaxa").value;
     const meses = document.getElementById("retornoMeses").value;
     const resultado = document.getElementById("resultadoRetorno");
 
-    pedirPost("/api/retorno", { taxa: taxa, meses: meses }).then(function (dados) {
+    pedirPost("/api/retorno", { valor: valor, taxa: taxa, meses: meses }).then(function (dados) {
         if (dados.ok) {
-            resultado.textContent = "A conta fica com " + euros(dados.resultado) + " no final dos " + meses + " meses.";
+            resultado.textContent = "No final dos " + meses + " meses o valor fica em " + euros(dados.resultado) + ".";
             resultado.classList.remove("d-none");
         } else {
             resultado.textContent = dados.erro;

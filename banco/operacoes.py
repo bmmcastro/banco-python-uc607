@@ -237,6 +237,9 @@ def pesquisar_transacoes(transacoes, conta, pesquisa):
 #cada mês o valor é multiplicado pela taxa, até acabarem os meses
 #a taxa pode ser negativa ou positiva: só o valor absoluto tem de ficar entre 0 e 100
 def consultar_retorno(valor, taxa, meses):
+    if not math.isfinite(valor) or valor <= 0:
+        raise ValueError("O valor tem de ser positivo")
+
     if abs(taxa) > 100:
         raise ValueError("A taxa de juro tem de ter um valor absoluto entre 0 e 100")
 

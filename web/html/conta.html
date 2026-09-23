@@ -124,6 +124,7 @@
                 <h5 class="fw-bold mt-2">Investimento</h5>
                 <div class="text-secondary small mb-2">Simular o retorno (juro composto)</div>
                 <form id="formRetorno">
+                    <input type="number" step="0.01" min="0.01" id="retornoValor" class="form-control mb-2" placeholder="Valor a simular" required>
                     <input type="number" step="0.01" min="-100" max="100" id="retornoTaxa" class="form-control mb-2" placeholder="Taxa mensal (%)" required>
                     <input type="number" min="1" max="12" id="retornoMeses" class="form-control mb-2" placeholder="Meses (1 a 12)" required>
                     <button type="submit" class="btn btn-brand w-100">Simular</button>

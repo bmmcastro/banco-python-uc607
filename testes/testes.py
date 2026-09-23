@@ -167,6 +167,10 @@ class TestesBanco(unittest.TestCase):
         with self.assertRaises(ValueError):
             consultar_retorno(100, 10, 13)
 
+        #o valor a simular também tem de ser positivo
+        with self.assertRaises(ValueError):
+            consultar_retorno(-5, 10, 5)
+
     def test_aplicar_tira_o_valor_do_saldo(self):
         #aplicar 50 com saldo 100: o valor sai do saldo e fica cativo
         aplicacoes = []

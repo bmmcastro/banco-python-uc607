@@ -160,13 +160,14 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
             )
 
             if opcao_investimento == 1:
-                #simular: quanto vale a conta com juro composto (sem mexer no dinheiro)
+                #simular: quanto valeria um valor com juro composto (sem mexer no dinheiro)
                 try:
+                    valor = pedir_numero("Valor a simular: ")
                     taxa = pedir_numero("Taxa de juro mensal (%): ")
                     meses = pedir_numero("Número de meses: ")
 
-                    resultado = consultar_retorno(conta.valor, taxa, int(meses))
-                    print(f"A conta fica com {resultado:.2f} no final dos {int(meses)} meses")
+                    resultado = consultar_retorno(valor, taxa, int(meses))
+                    print(f"No final dos {int(meses)} meses o valor fica em {resultado:.2f}")
                 except ValueError as erro:
                     print(erro)
             elif opcao_investimento == 2:

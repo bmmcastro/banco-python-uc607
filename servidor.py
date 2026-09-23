@@ -5,7 +5,7 @@ from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao
+from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
 from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
@@ -173,6 +173,7 @@ def api_aplicacoes():
 
     #o histórico das aplicações que já terminaram
     historico = []
+    total_ganho = 0
     for aplicacao in listar_historico_aplicacoes(session["username"]):
         historico.append({
             "valor": aplicacao.valor,
@@ -181,8 +182,40 @@ def api_aplicacoes():
             "valor_final": aplicacao.valor_final,
             "data_fim": aplicacao.data_fim,
         })
+        total_ganho = total_ganho + (aplicacao.valor_final - aplicacao.valor)
 
-    return jsonify({"ok": True, "aplicacoes": lista, "historico": historico})
+    #os totais das aplicações ativas
+    total_aplicado = 0
+    total_a_ganhar = 0
+    for aplicacao in lista:
+        total_aplicado = total_aplicado + aplicacao["valor"]
+        total_a_ganhar = total_a_ganhar + (aplicacao["retorno"] - aplicacao["valor"])
+
+    return jsonify({
+        "ok": True,
+        "aplicacoes": lista,
+        "historico": historico,
+        "totais": {"aplicado": round(total_aplicado, 2), "a_ganhar": round(total_a_ganhar, 2), "ganhado": round(total_ganho, 2)},
+    })
+
+#cancelar uma aplicação: o dinheiro ganho até hoje volta ao saldo
+@app.route("/api/cancelar_aplicacao", methods=["POST"])
+def api_cancelar_aplicacao():
+    if "username" not in session:
+        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+
+    conta = contas[session["username"]]
+    dados = request.get_json(silent=True)
+    try:
+        cancelada = cancelar_aplicacao(conta, aplicacoes, int(dados["indice"]))
+        guardar_no_historico(cancelada)
+        guardar_dados(utilizadores, contas, transacoes)
+        guardar_aplicacoes(aplicacoes)
+        return jsonify({"ok": True, "valor": conta.valor, "recebido": cancelada.valor_final})
+    except ValueError as erro:
+        return jsonify({"ok": False, "erro": str(erro)})
+    except (KeyError, TypeError):
+        return jsonify({"ok": False, "erro": "Pedido inválido: faltam dados."})
 
 #aplicar dinheiro: o valor sai do saldo e fica cativo até ao fim do prazo
 @app.route("/api/aplicar", methods=["POST"])

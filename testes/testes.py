@@ -3,7 +3,7 @@ import os
 import unittest
 
 from banco.modelos import Utilizador, Conta, Aplicacao
-from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao
+from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
 from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.relatorio import relatorio_contas, relatorio_transferencias
@@ -245,6 +245,23 @@ class TestesBanco(unittest.TestCase):
         self.assertAlmostEqual(valor_hoje, 110.0)
         #39 e não 40: a data guardada não tem segundos, fica um pouco atrás
         self.assertEqual(dias_restantes, 39)
+
+    def test_cancelar_aplicacao_devolve_o_ganho(self):
+        #cancelar a meio: o valor de hoje volta ao saldo e sai das ativas
+        from datetime import datetime, timedelta
+        fim = datetime.now() + timedelta(days=40)
+        aplicacao = Aplicacao("bruno", 100, 10, 3, fim.strftime("%d/%m/%Y %H:%M"))
+        aplicacoes = [aplicacao]
+
+        cancelada = cancelar_aplicacao(self.contas["bruno"], aplicacoes, 1)
+
+        self.assertEqual(len(aplicacoes), 0)
+        self.assertAlmostEqual(cancelada.valor_final, 110.0)   #100 + 1 mês de juros
+        self.assertAlmostEqual(self.contas["bruno"].valor, 210.0)  #100 do saldo + 110
+
+        #número fora da lista dá erro
+        with self.assertRaises(ValueError):
+            cancelar_aplicacao(self.contas["bruno"], aplicacoes, 1)
 
 
 if __name__ == "__main__":

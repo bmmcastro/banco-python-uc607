@@ -1,6 +1,6 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao
+from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
 from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
@@ -251,7 +251,7 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                           f"{transacao.username_destino} ({transacao.iban_destino}) | {transacao.valor}")
             print("")
         elif opcao == 11:
-            #aplicações: as ativas (com o retorno previsto) e o histórico das terminadas
+            #aplicações: as ativas (numeradas, com totais), o histórico e o cancelamento
             minhas = []
             for aplicacao in aplicacoes:
                 if aplicacao.username == conta.username:
@@ -261,19 +261,42 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                 print("Não tens aplicações ativas.")
             else:
                 print("Aplicações ativas:")
+                total_aplicado = 0
+                total_a_ganhar = 0
+                numero = 1
                 for aplicacao in minhas:
                     retorno = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
                     valor_hoje, dias_restantes = situacao_aplicacao(aplicacao)
-                    print(f" - {aplicacao.valor} | {aplicacao.taxa}% | {aplicacao.meses} meses | "
+                    print(f" {numero} - {aplicacao.valor} | {aplicacao.taxa}% | {aplicacao.meses} meses | "
                           f"hoje vale {valor_hoje:.2f} | faltam {dias_restantes} dias | "
                           f"retorno final {retorno:.2f} | até {aplicacao.data_fim}")
+                    total_aplicado = total_aplicado + aplicacao.valor
+                    total_a_ganhar = total_a_ganhar + (retorno - aplicacao.valor)
+                    numero = numero + 1
+                print(f"Total aplicado: {total_aplicado:.2f} | a ganhar no fim dos prazos: {total_a_ganhar:.2f}")
 
             historico = listar_historico_aplicacoes(conta.username)
             if len(historico) > 0:
                 print("Histórico (aplicações terminadas):")
+                total_ganho = 0
                 for aplicacao in historico:
+                    ganho = aplicacao.valor_final - aplicacao.valor
                     print(f" - {aplicacao.valor} | {aplicacao.taxa}% | {aplicacao.meses} meses | "
-                          f"recebeu {aplicacao.valor_final:.2f} | terminou a {aplicacao.data_fim}")
+                          f"recebeu {aplicacao.valor_final:.2f} (ganhou {ganho:.2f}) | terminou a {aplicacao.data_fim}")
+                    total_ganho = total_ganho + ganho
+                print(f"Total ganho: {total_ganho:.2f}")
+
+            quero = input("Queres cancelar alguma aplicação? (s/n): ")
+            if quero == "s" and len(minhas) > 0:
+                try:
+                    numero = pedir_opcao("Número da aplicação a cancelar: ")
+                    cancelada = cancelar_aplicacao(conta, aplicacoes, numero)
+                    guardar_no_historico(cancelada)
+                    guardar_dados(utilizadores, contas, transacoes)
+                    guardar_aplicacoes(aplicacoes)
+                    print(f"Aplicação cancelada: voltaram {cancelada.valor_final:.2f} ao saldo. Saldo atual: {conta.valor}")
+                except ValueError as erro:
+                    print(erro)
 
             print("(para fazer uma aplicação nova, usa a opção 7 - Investimento)")
             print("")

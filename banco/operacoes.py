@@ -305,6 +305,31 @@ def situacao_aplicacao(aplicacao):
 
     return valor_hoje, dias_restantes
 
+#cancelar uma aplicação: em vez de esperar pelo fim do prazo,
+#o dinheiro ganho até hoje volta logo ao saldo
+def cancelar_aplicacao(conta, aplicacoes, numero):
+    minhas = []
+    for aplicacao in aplicacoes:
+        if aplicacao.username == conta.username:
+            minhas.append(aplicacao)
+
+    if numero < 1 or numero > len(minhas):
+        raise ValueError("Escolhe uma aplicação da lista (1 a " + str(len(minhas)) + ")")
+
+    aplicacao = minhas[numero - 1]
+
+    #devolve o valor de hoje (o aplicado + os juros já corridos)
+    valor_hoje, dias_restantes = situacao_aplicacao(aplicacao)
+    conta.valor = conta.valor + valor_hoje
+
+    #a aplicação sai das ativas e fica marcada com o que rendeu,
+    #com a data do cancelamento (foi quando realmente terminou)
+    aplicacao.valor_final = valor_hoje
+    aplicacao.data_fim = datetime.now().strftime("%d/%m/%Y %H:%M")
+    aplicacoes.remove(aplicacao)
+
+    return aplicacao
+
 #verificar as aplicações da conta: as que chegaram ao fim do prazo
 #devolvem o dinheiro ao saldo, com os juros calculados pela função recursiva do retorno
 def verificar_aplicacoes(conta, aplicacoes):

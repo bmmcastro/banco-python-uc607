@@ -329,13 +329,36 @@ function carregarAplicacoes() {
             titulo.textContent = "Aplicações ativas:";
             lista.appendChild(titulo);
 
+            let numero = 1;
             for (const aplicacao of dados.aplicacoes) {
                 const linha = document.createElement("div");
-                linha.textContent = euros(aplicacao.valor) + " | " + aplicacao.taxa + "% | "
+                linha.className = "d-flex justify-content-between align-items-center gap-2";
+
+                const texto = document.createElement("span");
+                texto.textContent = euros(aplicacao.valor) + " | " + aplicacao.taxa + "% | "
                     + aplicacao.meses + " meses | hoje vale " + euros(aplicacao.valor_hoje)
                     + " | faltam " + aplicacao.dias_restantes + " dias (até " + aplicacao.data_fim + ")";
+
+                //o botão para cancelar esta aplicação (o dinheiro ganho volta ao saldo)
+                const botao = document.createElement("button");
+                botao.className = "btn btn-sm btn-outline-secondary flex-shrink-0";
+                botao.textContent = "Cancelar";
+                const indice = numero;
+                botao.addEventListener("click", function () {
+                    cancelarAplicacao(indice);
+                });
+
+                linha.appendChild(texto);
+                linha.appendChild(botao);
                 lista.appendChild(linha);
+                numero = numero + 1;
             }
+
+            const totais = document.createElement("div");
+            totais.className = "text-secondary";
+            totais.textContent = "Total aplicado: " + euros(dados.totais.aplicado)
+                + " | a ganhar no fim dos prazos: " + euros(dados.totais.a_ganhar);
+            lista.appendChild(totais);
         }
 
         if (dados.historico.length > 0) {
@@ -351,10 +374,34 @@ function carregarAplicacoes() {
                     + " | terminou a " + aplicacao.data_fim;
                 lista.appendChild(linha);
             }
+
+            const totais = document.createElement("div");
+            totais.className = "text-secondary";
+            totais.textContent = "Total ganho: " + euros(dados.totais.ganhado);
+            lista.appendChild(totais);
         }
     });
 }
 carregarAplicacoes();
+
+//cancelar uma aplicação: o dinheiro ganho até hoje volta ao saldo
+function cancelarAplicacao(indice) {
+    const mensagem = document.getElementById("mensagemAplicar");
+
+    pedirPost("/api/cancelar_aplicacao", { indice: indice }).then(function (dados) {
+        mensagem.classList.remove("d-none");
+        mensagem.classList.remove("text-success");
+
+        if (dados.ok) {
+            document.getElementById("saldoConta").textContent = euros(dados.valor);
+            mensagem.textContent = "Aplicação cancelada: voltaram " + euros(dados.recebido) + " ao saldo.";
+            mensagem.classList.add("text-success");
+            carregarAplicacoes();
+        } else {
+            mensagem.textContent = dados.erro;
+        }
+    });
+}
 
 //sair da conta
 document.getElementById("botaoSair").addEventListener("click", function () {

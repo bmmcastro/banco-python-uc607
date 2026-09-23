@@ -52,11 +52,11 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
             " 4 - Consultar saldo\n"
             " 5 - Consultar IBAN\n"
             " 6 - Histórico de transações\n"
-            " 7 - Consultar retorno\n"
+            " 7 - Investimento\n"
             " 8 - Relatório do sistema\n"
             " 9 - Transferir por ficheiro CSV\n"
             " 10 - Pesquisar transações\n"
-            " 11 - Aplicar dinheiro\n"
+            " 11 - Aplicações\n"
             "Valor: "
         )
         if opcao == 0:
@@ -150,15 +150,40 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                     print("Ficheiro não guardado.")
             print("")
         elif opcao == 7:
-            #consultar o retorno: quanto vale a conta com juro composto
-            try:
-                taxa = pedir_numero("Taxa de juro mensal (%): ")
-                meses = pedir_numero("Número de meses: ")
+            #investimento: simular o retorno ou aplicar dinheiro a prazo
+            opcao_investimento = pedir_opcao(
+                "Investimento — introduza um dos seguintes valores:\n"
+                " 0 - Voltar\n"
+                " 1 - Simular retorno\n"
+                " 2 - Aplicar dinheiro\n"
+                "Valor: "
+            )
 
-                resultado = consultar_retorno(conta.valor, taxa, int(meses))
-                print(f"A conta fica com {resultado:.2f} no final dos {int(meses)} meses")
-            except ValueError as erro:
-                print(erro)
+            if opcao_investimento == 1:
+                #simular: quanto vale a conta com juro composto (sem mexer no dinheiro)
+                try:
+                    taxa = pedir_numero("Taxa de juro mensal (%): ")
+                    meses = pedir_numero("Número de meses: ")
+
+                    resultado = consultar_retorno(conta.valor, taxa, int(meses))
+                    print(f"A conta fica com {resultado:.2f} no final dos {int(meses)} meses")
+                except ValueError as erro:
+                    print(erro)
+            elif opcao_investimento == 2:
+                #aplicar: o valor sai do saldo e fica cativo até ao fim do prazo
+                try:
+                    valor = pedir_numero("Valor a aplicar: ")
+                    taxa = pedir_numero("Taxa de juro mensal (%): ")
+                    meses = pedir_numero("Número de meses (1 a 12): ")
+
+                    aplicar_dinheiro(conta, aplicacoes, valor, taxa, int(meses))
+                    guardar_dados(utilizadores, contas, transacoes)
+                    guardar_aplicacoes(aplicacoes)
+                    print(f"Aplicação feita. O valor fica cativo até ao fim do prazo. Saldo atual: {conta.valor}")
+                except ValueError as erro:
+                    print(erro)
+                except SaldoInsuficienteError as erro:
+                    print(erro)
             print("")
         elif opcao == 8:
             #relatório do sistema: as estatísticas correm em dois processos
@@ -225,7 +250,7 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                           f"{transacao.username_destino} ({transacao.iban_destino}) | {transacao.valor}")
             print("")
         elif opcao == 11:
-            #menu das aplicações: as ativas (com o retorno previsto) e o histórico das terminadas
+            #aplicações: as ativas (com o retorno previsto) e o histórico das terminadas
             minhas = []
             for aplicacao in aplicacoes:
                 if aplicacao.username == conta.username:
@@ -247,25 +272,7 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                     print(f" - {aplicacao.valor} | {aplicacao.taxa}% | {aplicacao.meses} meses | "
                           f"recebeu {aplicacao.valor_final:.2f} | terminou a {aplicacao.data_fim}")
 
-            #perguntar se quer fazer uma aplicação nova
-            quero = input("Queres fazer uma aplicação? (s/n): ")
-            if quero != "s":
-                print("")
-                continue
-
-            try:
-                valor = pedir_numero("Valor a aplicar: ")
-                taxa = pedir_numero("Taxa de juro mensal (%): ")
-                meses = pedir_numero("Número de meses (1 a 12): ")
-
-                aplicar_dinheiro(conta, aplicacoes, valor, taxa, int(meses))
-                guardar_dados(utilizadores, contas, transacoes)
-                guardar_aplicacoes(aplicacoes)
-                print(f"Aplicação feita. O valor fica cativo até ao fim do prazo. Saldo atual: {conta.valor}")
-            except ValueError as erro:
-                print(erro)
-            except SaldoInsuficienteError as erro:
-                print(erro)
+            print("(para fazer uma aplicação nova, usa a opção 7 - Investimento)")
             print("")
         else:
             print("Opção inválida. Tente novamente.\n")

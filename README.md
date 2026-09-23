@@ -8,7 +8,7 @@ Formador: Diogo Lopes Vaz (EISNT).
 
 Online: https://bancopy607.algarit.pt
 Código: https://github.com/bmmcastro/banco-python-uc607
-Contas de demonstração: `bruno / bruno123` e `ana / ana123`
+Contas de demonstração: `bruno / bruno123`, `rui / rui123`, `amanda / amanda123` e `mateus / mateus123`
 
 O site tem um menu à esquerda (Início, Sobre e FAQ) e à direita o **Homebanking**
 (entrar/criar conta e usar o sistema) e o **Estado da API**, que testa do browser

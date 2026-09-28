@@ -1,6 +1,6 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_registos, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
+from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, ordenar_registos, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
 from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento, listar_movimentos
 from banco.modelos import Movimento
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
@@ -56,8 +56,7 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
             " 7 - Investimento\n"
             " 8 - Relatório do sistema\n"
             " 9 - Transferir por ficheiro CSV\n"
-            " 10 - Pesquisar transações\n"
-            " 11 - Aplicações\n"
+            " 10 - Aplicações\n"
             "Valor: "
         )
         if opcao == 0:
@@ -147,6 +146,17 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                         tipo_t = "Recebida"
                     texto = f"{transacao.iban_origem} ({transacao.username_origem}) -> {transacao.iban_destino} ({transacao.username_destino})"
                     registos.append(Movimento(conta.username, tipo_t, transacao.data, transacao.valor, texto))
+
+            #a pesquisa filtra por texto (enter para ver tudo): procura no tipo,
+            #na data, no valor e na descrição de cada registo
+            pesquisa = input("Pesquisar (enter para ver tudo): ")
+            if pesquisa != "":
+                encontrados = []
+                for registo in registos:
+                    texto = (registo.tipo + " " + registo.data + " " + str(registo.valor) + " " + registo.texto).lower()
+                    if pesquisa.lower() in texto:
+                        encontrados.append(registo)
+                registos = encontrados
 
             #filtrar pelo tipo escolhido
             if tipo >= 1:
@@ -298,18 +308,6 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
                 print(f"Transferências do ficheiro feitas com sucesso. Saldo atual: {conta.valor}")
             print("")
         elif opcao == 10:
-            #pesquisar transações desta conta por texto (data, username, IBAN ou valor)
-            pesquisa = input("Pesquisar: ")
-            encontradas = pesquisar_transacoes(transacoes, conta, pesquisa)
-
-            if len(encontradas) == 0:
-                print("Nenhuma transação encontrada.")
-            else:
-                for transacao in encontradas:
-                    print(f"[{transacao.data}] {transacao.username_origem} ({transacao.iban_origem}) -> "
-                          f"{transacao.username_destino} ({transacao.iban_destino}) | {transacao.valor}")
-            print("")
-        elif opcao == 11:
             #aplicações: as ativas (numeradas, com totais), o histórico e o cancelamento
             minhas = []
             for aplicacao in aplicacoes:

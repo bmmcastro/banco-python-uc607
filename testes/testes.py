@@ -13,7 +13,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from banco.modelos import Utilizador, Conta, Aplicacao
-from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
+from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, ordenar_transacoes_por_valor, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
 from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.relatorio import relatorio_contas, relatorio_transferencias
@@ -241,6 +241,21 @@ class TestesBanco(unittest.TestCase):
         self.assertEqual(resultado["mais_recebeu"], [15, ["ana"]])
         self.assertEqual(resultado["mais_enviou"], [15, ["bruno"]])
         self.assertEqual(resultado["total"], 18)
+
+    def test_ordenar_transacoes_por_valor(self):
+        #o selection sort ordena crescente e decrescente sem mexer na original
+        transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 10)
+        transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 5)
+        transferir(self.contas, self.transacoes, "ana", "PT50 0001", 30)
+
+        valores = [t.valor for t in ordenar_transacoes_por_valor(self.transacoes)]
+        self.assertEqual(valores, [5, 10, 30])
+
+        valores = [t.valor for t in ordenar_transacoes_por_valor(self.transacoes, True)]
+        self.assertEqual(valores, [30, 10, 5])
+
+        #a lista original fica pela ordem em que foi criada
+        self.assertEqual([t.valor for t in self.transacoes], [10, 5, 30])
 
     def test_situacao_aplicacao(self):
         #uma aplicação a meio do prazo: já rendeu os meses passados e faltam os dias restantes

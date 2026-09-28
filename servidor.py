@@ -5,7 +5,7 @@ from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
+from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_transacoes_por_valor, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
 from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
@@ -345,6 +345,13 @@ def api_transacoes():
     #a pesquisa vem no endereço (?pesquisa=...); sem pesquisa mostra tudo
     pesquisa = request.args.get("pesquisa", "")
     minhas_transacoes = pesquisar_transacoes(transacoes, conta, pesquisa)
+
+    #a ordenação por valor também vem no endereço (?ordem=valor_crescente|valor_decrescente)
+    ordem = request.args.get("ordem", "")
+    if ordem == "valor_crescente":
+        minhas_transacoes = ordenar_transacoes_por_valor(minhas_transacoes, False)
+    elif ordem == "valor_decrescente":
+        minhas_transacoes = ordenar_transacoes_por_valor(minhas_transacoes, True)
 
     lista = []
     for transacao in minhas_transacoes:

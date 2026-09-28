@@ -214,6 +214,26 @@ def transferir_por_ficheiro(contas, transacoes, username_origem, conteudo):
 
     return []
 
+#ordenar transações por valor com o selection sort (crescente ou decrescente)
+#devolve uma lista nova, sem mexer na original: em cada passagem escolhe-se
+#o menor valor (crescente) ou o maior (decrescente) e coloca-se na posição certa
+def ordenar_transacoes_por_valor(transacoes, decrescente=False):
+    ordenadas = transacoes.copy()
+
+    n = len(ordenadas)
+    for i in range(n - 1):
+        m = i
+        for j in range(i + 1, n):
+            if decrescente:
+                if ordenadas[j].valor > ordenadas[m].valor:
+                    m = j
+            else:
+                if ordenadas[j].valor < ordenadas[m].valor:
+                    m = j
+        ordenadas[i], ordenadas[m] = ordenadas[m], ordenadas[i]
+
+    return ordenadas
+
 #pesquisar as transações de uma conta por texto: a pesquisa pode ser uma data,
 #um username, um IBAN ou um valor; devolve a lista das transações que correspondem
 def pesquisar_transacoes(transacoes, conta, pesquisa):

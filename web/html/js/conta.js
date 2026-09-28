@@ -188,12 +188,13 @@ document.getElementById("formRetorno").addEventListener("submit", function (even
     });
 });
 
-//histórico de transações (tabela); com pesquisa, só as transações que correspondem
+//histórico de transações (tabela); com pesquisa e ordenação por valor (selection sort no servidor)
 function carregarHistorico(pesquisa) {
-    let url = "/api/transacoes";
+    let url = "/api/transacoes?";
     if (pesquisa != undefined && pesquisa != "") {
-        url = url + "?pesquisa=" + encodeURIComponent(pesquisa);
+        url = url + "pesquisa=" + encodeURIComponent(pesquisa) + "&";
     }
+    url = url + "ordem=" + document.getElementById("ordemHistorico").value;
 
     pedirGet(url).then(function (dados) {
         const corpo = document.getElementById("corpoHistorico");
@@ -289,6 +290,11 @@ function carregarRelatorio() {
 //pesquisar no histórico: a pesquisa é feita pelo Python no servidor
 document.getElementById("formPesquisar").addEventListener("submit", function (evento) {
     evento.preventDefault();
+    carregarHistorico(document.getElementById("pesquisarTexto").value);
+});
+
+//mudar a ordenação do histórico (por valor, crescente ou decrescente)
+document.getElementById("ordemHistorico").addEventListener("change", function () {
     carregarHistorico(document.getElementById("pesquisarTexto").value);
 });
 

@@ -1,6 +1,6 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
+from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_transacoes_por_valor, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
 from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
@@ -131,6 +131,13 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
             if len(minhas_transacoes) == 0:
                 print("Ainda não existem transações nesta conta.")
             else:
+                #perguntar se quer o histórico ordenado por valor (selection sort)
+                ordem = input("Ordenar por valor? (c)rescente, (d)ecrescente, (n)ão: ")
+                if ordem == "c":
+                    minhas_transacoes = ordenar_transacoes_por_valor(minhas_transacoes, False)
+                elif ordem == "d":
+                    minhas_transacoes = ordenar_transacoes_por_valor(minhas_transacoes, True)
+
                 #mostrar o histórico, marcando se foi enviada ou recebida
                 for transacao in minhas_transacoes:
                     if transacao.iban_origem == conta.iban:

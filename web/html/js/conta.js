@@ -194,7 +194,8 @@ function carregarHistorico(pesquisa) {
     if (pesquisa != undefined && pesquisa != "") {
         url = url + "pesquisa=" + encodeURIComponent(pesquisa) + "&";
     }
-    url = url + "ordem=" + document.getElementById("ordemHistorico").value;
+    url = url + "tipo=" + document.getElementById("tipoHistorico").value;
+    url = url + "&ordem=" + document.getElementById("ordemHistorico").value;
 
     pedirGet(url).then(function (dados) {
         const corpo = document.getElementById("corpoHistorico");
@@ -208,9 +209,12 @@ function carregarHistorico(pesquisa) {
         for (const transacao of dados.transacoes) {
             const linha = document.createElement("tr");
 
+            //Enviadas e Levantamentos saem vermelhos; Recebidas e Depósitos verdes
+            const negativo = transacao.tipo == "Enviada" || transacao.tipo == "Levantamento";
+
             const tipo = document.createElement("td");
             const badge = document.createElement("span");
-            badge.className = transacao.tipo == "Enviada" ? "badge text-bg-danger" : "badge text-bg-success";
+            badge.className = negativo ? "badge text-bg-danger" : "badge text-bg-success";
             badge.textContent = transacao.tipo;
             tipo.appendChild(badge);
 
@@ -218,12 +222,11 @@ function carregarHistorico(pesquisa) {
             data.textContent = transacao.data;
 
             const conta = document.createElement("td");
-            conta.textContent = "De " + transacao.username_origem + " (" + transacao.iban_origem + ")"
-                + " → Para " + transacao.username_destino + " (" + transacao.iban_destino + ")";
+            conta.textContent = transacao.conta;
 
             const valor = document.createElement("td");
-            valor.className = transacao.tipo == "Enviada" ? "text-danger" : "text-success";
-            valor.textContent = (transacao.tipo == "Enviada" ? "-" : "+") + euros(transacao.valor);
+            valor.className = negativo ? "text-danger" : "text-success";
+            valor.textContent = (negativo ? "-" : "+") + euros(transacao.valor);
 
             linha.appendChild(tipo);
             linha.appendChild(data);
@@ -293,8 +296,11 @@ document.getElementById("formPesquisar").addEventListener("submit", function (ev
     carregarHistorico(document.getElementById("pesquisarTexto").value);
 });
 
-//mudar a ordenação do histórico (por valor, crescente ou decrescente)
+//mudar a ordenação ou o tipo do histórico
 document.getElementById("ordemHistorico").addEventListener("change", function () {
+    carregarHistorico(document.getElementById("pesquisarTexto").value);
+});
+document.getElementById("tipoHistorico").addEventListener("change", function () {
     carregarHistorico(document.getElementById("pesquisarTexto").value);
 });
 

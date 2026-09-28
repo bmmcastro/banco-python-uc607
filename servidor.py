@@ -5,8 +5,9 @@ from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_transacoes_por_valor, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
-from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento
+from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_registos, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
+from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento, listar_movimentos
+from banco.modelos import Movimento
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
 app = Flask(__name__, static_folder=None)
@@ -348,26 +349,66 @@ def api_transacoes():
 
     #a pesquisa vem no endereço (?pesquisa=...); sem pesquisa mostra tudo
     pesquisa = request.args.get("pesquisa", "")
-    minhas_transacoes = pesquisar_transacoes(transacoes, conta, pesquisa)
 
-    #a ordenação por valor também vem no endereço (?ordem=valor_crescente|valor_decrescente)
+    #juntar numa só lista os movimentos (depósitos e levantamentos)
+    #e as transferências desta conta, como o terminal faz
+    registos = []
+    for movimento in listar_movimentos(conta.username):
+        texto = (movimento.tipo + " " + movimento.data + " " + str(movimento.valor)).lower()
+        if pesquisa == "" or pesquisa.lower() in texto:
+            if movimento.tipo == "Depósito":
+                descricao = "Depósito na conta"
+            else:
+                descricao = "Levantamento da conta"
+            registos.append(Movimento(conta.username, movimento.tipo, movimento.data, movimento.valor, descricao))
+
+    for transacao in pesquisar_transacoes(transacoes, conta, pesquisa):
+        descricao = (f"De {transacao.username_origem} ({transacao.iban_origem}) → Para "
+                     f"{transacao.username_destino} ({transacao.iban_destino})")
+        if transacao.iban_origem == conta.iban:
+            tipo = "Enviada"
+        else:
+            tipo = "Recebida"
+        registos.append(Movimento(conta.username, tipo, transacao.data, transacao.valor, descricao))
+
+    #o tipo escolhido vem no endereço (?tipo=tudo|depositos|levantamentos|recebidas|enviadas)
+    tipo = request.args.get("tipo", "tudo")
+    if tipo == "depositos":
+        nome_tipo = "Depósito"
+    elif tipo == "levantamentos":
+        nome_tipo = "Levantamento"
+    elif tipo == "recebidas":
+        nome_tipo = "Recebida"
+    elif tipo == "enviadas":
+        nome_tipo = "Enviada"
+    else:
+        nome_tipo = ""
+
+    if nome_tipo != "":
+        filtrados = []
+        for registo in registos:
+            if registo.tipo == nome_tipo:
+                filtrados.append(registo)
+        registos = filtrados
+
+    #a ordenação vem no endereço (?ordem=valor_crescente|valor_decrescente|data_crescente|data_decrescente)
     ordem = request.args.get("ordem", "")
     if ordem == "valor_crescente":
-        minhas_transacoes = ordenar_transacoes_por_valor(minhas_transacoes, False)
+        registos = ordenar_registos(registos, "valor", False)
     elif ordem == "valor_decrescente":
-        minhas_transacoes = ordenar_transacoes_por_valor(minhas_transacoes, True)
+        registos = ordenar_registos(registos, "valor", True)
+    elif ordem == "data_crescente":
+        registos = ordenar_registos(registos, "data", False)
+    elif ordem == "data_decrescente":
+        registos = ordenar_registos(registos, "data", True)
 
     lista = []
-    for transacao in minhas_transacoes:
-        tipo = "Enviada" if transacao.iban_origem == conta.iban else "Recebida"
+    for registo in registos:
         lista.append({
-            "tipo": tipo,
-            "data": transacao.data,
-            "valor": transacao.valor,
-            "iban_origem": transacao.iban_origem,
-            "username_origem": transacao.username_origem,
-            "iban_destino": transacao.iban_destino,
-            "username_destino": transacao.username_destino,
+            "tipo": registo.tipo,
+            "data": registo.data,
+            "valor": registo.valor,
+            "conta": registo.texto,
         })
 
     return jsonify({"ok": True, "transacoes": lista})

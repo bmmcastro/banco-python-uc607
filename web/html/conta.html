@@ -156,10 +156,19 @@
                 <input type="text" id="pesquisarTexto" class="form-control form-control-sm" placeholder="Pesquisar (data, nome, IBAN ou valor)">
                 <button type="submit" class="btn btn-sm btn-outline-secondary">Pesquisar</button>
             </form>
+            <select id="tipoHistorico" class="form-select form-select-sm w-auto">
+                <option value="tudo">Tudo</option>
+                <option value="depositos">Depósitos</option>
+                <option value="levantamentos">Levantamentos</option>
+                <option value="recebidas">Recebidas</option>
+                <option value="enviadas">Enviadas</option>
+            </select>
             <select id="ordemHistorico" class="form-select form-select-sm w-auto">
                 <option value="">Ordem normal</option>
                 <option value="valor_crescente">Valor: crescente</option>
                 <option value="valor_decrescente">Valor: decrescente</option>
+                <option value="data_crescente">Data: crescente</option>
+                <option value="data_decrescente">Data: decrescente</option>
             </select>
             <a href="/api/exportar" class="btn btn-sm btn-outline-secondary">⬇️ Exportar CSV</a>
         </div>

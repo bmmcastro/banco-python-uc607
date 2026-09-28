@@ -1,7 +1,8 @@
 #menus do sistema e conversa com o utilizador
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_transacoes_por_valor, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
-from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
+from banco.operacoes import criar_utilizador, entrar, transferir, procurar_por_iban, consultar_retorno, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_registos, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
+from banco.dados import guardar_csv, guardar_dados, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento, listar_movimentos
+from banco.modelos import Movimento
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
 #pedir um número ao utilizador, sem deixar o programa rebentar se escrever letras
@@ -69,6 +70,7 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
             try:
                 valor = pedir_numero("Valor a levantar: ")
                 conta.levantar(valor)
+                registar_movimento(conta.username, "Levantamento", valor)
                 guardar_dados(utilizadores, contas, transacoes)  #guardar logo depois da operação
                 print(f"Foi levantado {valor}. Saldo atual: {conta.valor}")
             except ValueError as erro:
@@ -80,6 +82,7 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
             try:
                 valor = pedir_numero("Valor a depositar: ")
                 conta.depositar(valor)
+                registar_movimento(conta.username, "Depósito", valor)
                 guardar_dados(utilizadores, contas, transacoes)  #guardar logo depois da operação
                 print(f"Foi depositado {valor}. Saldo atual: {conta.valor}")
             except ValueError as erro:
@@ -122,39 +125,88 @@ def menu_conta(conta, utilizadores, contas, transacoes, aplicacoes):
             print(f"IBAN: {conta.iban}")
             print("")
         elif opcao == 6:
-            #histórico: só as transações onde consta o IBAN desta conta (enviadas ou recebidas)
-            minhas_transacoes = []
+            #histórico: escolher o tipo de movimentos a ver e a ordenação
+            tipo = pedir_opcao(
+                "Ver:\n"
+                " 0 - Tudo\n"
+                " 1 - Depósitos\n"
+                " 2 - Levantamentos\n"
+                " 3 - Transferências recebidas\n"
+                " 4 - Transferências enviadas\n"
+                "Valor: "
+            )
+
+            #juntar numa só lista os movimentos (depósitos e levantamentos)
+            #e as transferências desta conta (como registos com tipo)
+            registos = listar_movimentos(conta.username)
             for transacao in transacoes:
                 if transacao.iban_origem == conta.iban or transacao.iban_destino == conta.iban:
-                    minhas_transacoes.append(transacao)
-
-            if len(minhas_transacoes) == 0:
-                print("Ainda não existem transações nesta conta.")
-            else:
-                #perguntar se quer o histórico ordenado por valor (selection sort)
-                ordem = input("Ordenar por valor? (c)rescente, (d)ecrescente, (n)ão: ")
-                if ordem == "c":
-                    minhas_transacoes = ordenar_transacoes_por_valor(minhas_transacoes, False)
-                elif ordem == "d":
-                    minhas_transacoes = ordenar_transacoes_por_valor(minhas_transacoes, True)
-
-                #mostrar o histórico, marcando se foi enviada ou recebida
-                for transacao in minhas_transacoes:
                     if transacao.iban_origem == conta.iban:
-                        tipo = "Enviada"
+                        tipo_t = "Enviada"
                     else:
-                        tipo = "Recebida"
+                        tipo_t = "Recebida"
+                    texto = f"{transacao.iban_origem} ({transacao.username_origem}) -> {transacao.iban_destino} ({transacao.username_destino})"
+                    registos.append(Movimento(conta.username, tipo_t, transacao.data, transacao.valor, texto))
 
-                    print(f"[{tipo}] {transacao.data} | {transacao.iban_origem} ({transacao.username_origem}) -> "
-                          f"{transacao.iban_destino} ({transacao.username_destino}) | {transacao.valor}")
-
-                #perguntar se quer guardar o histórico num ficheiro CSV
-                guardar = input("Quer guardar estas transações num ficheiro CSV? (s/n): ")
-                if guardar == "s":
-                    nome_ficheiro = guardar_csv(conta, minhas_transacoes)
-                    print(f"Transações guardadas no ficheiro {nome_ficheiro}")
+            #filtrar pelo tipo escolhido
+            if tipo >= 1:
+                if tipo == 1:
+                    nome_tipo = "Depósito"
+                elif tipo == 2:
+                    nome_tipo = "Levantamento"
+                elif tipo == 3:
+                    nome_tipo = "Recebida"
                 else:
-                    print("Ficheiro não guardado.")
+                    nome_tipo = "Enviada"
+
+                filtrados = []
+                for registo in registos:
+                    if registo.tipo == nome_tipo:
+                        filtrados.append(registo)
+                registos = filtrados
+
+            #a ordenação é à escolha: por valor ou por data, crescente ou decrescente
+            campo = pedir_opcao(
+                "Ordenar por:\n"
+                " 0 - Sem ordenação\n"
+                " 1 - Valor\n"
+                " 2 - Data\n"
+                "Valor: "
+            )
+            if campo == 1 or campo == 2:
+                sentido = pedir_opcao(
+                    "Ordem:\n"
+                    " 1 - Crescente\n"
+                    " 2 - Decrescente\n"
+                    "Valor: "
+                )
+                if campo == 1:
+                    nome_campo = "valor"
+                else:
+                    nome_campo = "data"
+                registos = ordenar_registos(registos, nome_campo, sentido == 2)
+
+            if len(registos) == 0:
+                print("Não há movimentos para ver.")
+            else:
+                for registo in registos:
+                    if registo.texto == "":
+                        print(f"[{registo.tipo}] {registo.data} | {registo.valor}")
+                    else:
+                        print(f"[{registo.tipo}] {registo.data} | {registo.texto} | {registo.valor}")
+
+                #o CSV só guarda as transferências completas (a ver Tudo)
+                if tipo == 0:
+                    guardar = input("Quer guardar as transferências num ficheiro CSV? (s/n): ")
+                    if guardar == "s":
+                        minhas_transacoes = []
+                        for transacao in transacoes:
+                            if transacao.iban_origem == conta.iban or transacao.iban_destino == conta.iban:
+                                minhas_transacoes.append(transacao)
+                        nome_ficheiro = guardar_csv(conta, minhas_transacoes)
+                        print(f"Transações guardadas no ficheiro {nome_ficheiro}")
+                    else:
+                        print("Ficheiro não guardado.")
             print("")
         elif opcao == 7:
             #investimento: simular o retorno ou aplicar dinheiro a prazo

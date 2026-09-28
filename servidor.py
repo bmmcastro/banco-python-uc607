@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_transacoes_por_valor, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
-from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes
+from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
 app = Flask(__name__, static_folder=None)
@@ -244,7 +244,9 @@ def api_levantar():
 
     conta = contas[session["username"]]
     try:
-        conta.levantar(float(request.get_json(silent=True)["valor"]))
+        valor = float(request.get_json(silent=True)["valor"])
+        conta.levantar(valor)
+        registar_movimento(conta.username, "Levantamento", valor)
         guardar_dados(utilizadores, contas, transacoes)
         return jsonify({"ok": True, "valor": conta.valor})
     except ValueError as erro:
@@ -261,7 +263,9 @@ def api_depositar():
 
     conta = contas[session["username"]]
     try:
-        conta.depositar(float(request.get_json(silent=True)["valor"]))
+        valor = float(request.get_json(silent=True)["valor"])
+        conta.depositar(valor)
+        registar_movimento(conta.username, "Depósito", valor)
         guardar_dados(utilizadores, contas, transacoes)
         return jsonify({"ok": True, "valor": conta.valor})
     except ValueError as erro:

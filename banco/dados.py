@@ -3,8 +3,9 @@ import os
 import sqlite3
 import csv
 import time
+from datetime import datetime
 
-from banco.modelos import Utilizador, Conta, Transacao, Aplicacao
+from banco.modelos import Utilizador, Conta, Transacao, Aplicacao, Movimento
 
 #criar as tabelas no ficheiro banco.db (só cria se ainda não existirem)
 def criar_tabelas():
@@ -48,6 +49,14 @@ def criar_tabelas():
             taxa REAL,
             meses INTEGER,
             data_fim TEXT
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS movimentos (
+            username TEXT,
+            tipo TEXT,
+            data TEXT,
+            valor REAL
         )
     """)
     cursor.execute("""
@@ -207,6 +216,34 @@ def listar_historico_aplicacoes(username):
 
     ligacao.close()
     return historico
+
+#os movimentos da conta: depósitos e levantamentos (ficam registados um a um)
+
+#registar um movimento (chamado depois de depositar ou levantar)
+def registar_movimento(username, tipo, valor):
+    ligacao = sqlite3.connect("banco.db")
+    cursor = ligacao.cursor()
+    cursor.execute(
+        "INSERT INTO movimentos (username, tipo, data, valor) VALUES (?, ?, ?, ?)",
+        (username, tipo, datetime.now().strftime("%d/%m/%Y %H:%M"), valor)
+    )
+    ligacao.commit()
+    ligacao.close()
+
+#listar os movimentos de um utilizador
+def listar_movimentos(username):
+    ligacao = sqlite3.connect("banco.db")
+    cursor = ligacao.cursor()
+
+    movimentos = []
+    for username_m, tipo, data, valor in cursor.execute(
+        "SELECT username, tipo, data, valor FROM movimentos WHERE username = ?",
+        (username,)
+    ):
+        movimentos.append(Movimento(username_m, tipo, data, valor))
+
+    ligacao.close()
+    return movimentos
 
 #guardar as aplicações (depósitos a prazo) no banco.db
 def guardar_aplicacoes(aplicacoes):

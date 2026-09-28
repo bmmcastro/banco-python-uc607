@@ -12,9 +12,9 @@ import sqlite3
 import unittest
 from datetime import datetime, timedelta
 
-from banco.modelos import Utilizador, Conta, Aplicacao
-from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, ordenar_transacoes_por_valor, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
-from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes
+from banco.modelos import Utilizador, Conta, Aplicacao, Movimento
+from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, ordenar_registos, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
+from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento, listar_movimentos
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.relatorio import relatorio_contas, relatorio_transferencias
 
@@ -248,14 +248,42 @@ class TestesBanco(unittest.TestCase):
         transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 5)
         transferir(self.contas, self.transacoes, "ana", "PT50 0001", 30)
 
-        valores = [t.valor for t in ordenar_transacoes_por_valor(self.transacoes)]
+        valores = [t.valor for t in ordenar_registos(self.transacoes, "valor")]
         self.assertEqual(valores, [5, 10, 30])
 
-        valores = [t.valor for t in ordenar_transacoes_por_valor(self.transacoes, True)]
+        valores = [t.valor for t in ordenar_registos(self.transacoes, "valor", True)]
         self.assertEqual(valores, [30, 10, 5])
 
         #a lista original fica pela ordem em que foi criada
         self.assertEqual([t.valor for t in self.transacoes], [10, 5, 30])
+
+    def test_ordenar_registos_por_data(self):
+        #por data a ordenação tem de atravessar bem a mudança de mês
+        m1 = Movimento("bruno", "Depósito", "30/08/2026 10:00", 50)
+        m2 = Movimento("bruno", "Levantamento", "05/09/2026 15:00", 20)
+        m3 = Movimento("bruno", "Depósito", "21/09/2026 09:00", 30)
+
+        ordenados = ordenar_registos([m2, m1, m3], "data")
+        self.assertEqual([m.data[:5] for m in ordenados], ["30/08", "05/09", "21/09"])
+
+        #decrescente por valor continua a funcionar na mesma função
+        ordenados = ordenar_registos([m1, m2, m3], "valor", True)
+        self.assertEqual([m.valor for m in ordenados], [50, 30, 20])
+
+    def test_registar_e_listar_movimentos(self):
+        #os depósitos e levantamentos ficam registados um a um
+        registar_movimento("brunoteste", "Depósito", 100)
+        registar_movimento("brunoteste", "Levantamento", 40)
+
+        movimentos = listar_movimentos("brunoteste")
+        self.assertEqual(len(movimentos), 2)
+        self.assertEqual([m.tipo for m in movimentos], ["Depósito", "Levantamento"])
+
+        #arranjar para os próximos testes
+        ligacao = sqlite3.connect("banco.db")
+        ligacao.execute("DELETE FROM movimentos WHERE username = 'brunoteste'")
+        ligacao.commit()
+        ligacao.close()
 
     def test_situacao_aplicacao(self):
         #uma aplicação a meio do prazo: já rendeu os meses passados e faltam os dias restantes

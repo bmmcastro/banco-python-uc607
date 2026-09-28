@@ -214,25 +214,37 @@ def transferir_por_ficheiro(contas, transacoes, username_origem, conteudo):
 
     return []
 
-#ordenar transações por valor com o selection sort (crescente ou decrescente)
-#devolve uma lista nova, sem mexer na original: em cada passagem escolhe-se
-#o menor valor (crescente) ou o maior (decrescente) e coloca-se na posição certa
-def ordenar_transacoes_por_valor(transacoes, decrescente=False):
-    ordenadas = transacoes.copy()
+#ordenar registos (com .valor e .data) com o selection sort,
+#por valor ou por data, crescente ou decrescente
+#em cada passagem escolhe-se o menor (crescente) ou o maior (decrescente)
+def ordenar_registos(registos, campo, decrescente=False):
+    ordenados = registos.copy()
 
-    n = len(ordenadas)
+    n = len(ordenados)
     for i in range(n - 1):
         m = i
         for j in range(i + 1, n):
+            if campo == "data":
+                #as datas são texto (dd/mm/aaaa hh:mm): converter para comparar bem
+                valor_j = datetime.strptime(ordenados[j].data, "%d/%m/%Y %H:%M")
+                valor_m = datetime.strptime(ordenados[m].data, "%d/%m/%Y %H:%M")
+            else:
+                valor_j = ordenados[j].valor
+                valor_m = ordenados[m].valor
+
             if decrescente:
-                if ordenadas[j].valor > ordenadas[m].valor:
+                if valor_j > valor_m:
                     m = j
             else:
-                if ordenadas[j].valor < ordenadas[m].valor:
+                if valor_j < valor_m:
                     m = j
-        ordenadas[i], ordenadas[m] = ordenadas[m], ordenadas[i]
+        ordenados[i], ordenados[m] = ordenados[m], ordenados[i]
 
-    return ordenadas
+    return ordenados
+
+#ordenar transações por valor: usa a mesma função de cima
+def ordenar_transacoes_por_valor(transacoes, decrescente=False):
+    return ordenar_registos(transacoes, "valor", decrescente)
 
 #pesquisar as transações de uma conta por texto: a pesquisa pode ser uma data,
 #um username, um IBAN ou um valor; devolve a lista das transações que correspondem

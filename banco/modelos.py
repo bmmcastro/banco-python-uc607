@@ -57,3 +57,12 @@ class Aplicacao:
     meses: int             #prazo da aplicação
     data_fim: str          #quando acaba o prazo (dd/mm/aaaa hh:mm)
     valor_final: float = None   #quanto rendeu (só fica preenchido no histórico)
+
+
+@dataclass
+class Movimento:
+    username: str          #a quem pertence o movimento
+    tipo: str              #Depósito, Levantamento, Enviada ou Recebida
+    data: str              #quando aconteceu (dd/mm/aaaa hh:mm)
+    valor: float
+    texto: str = ""        #detalhe (origem e destino, nas transferências)

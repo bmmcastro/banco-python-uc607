@@ -77,49 +77,54 @@ document.getElementById("botaoVerificar").addEventListener("click", verificarTud
 //verificar logo quando a página abre
 verificarTudo();
 
-//os testes unitários do projeto: correm no servidor quando se clica no botão
+//os testes unitários do projeto: correm no servidor e a saída aparece como no terminal
 function correrTestes() {
-    const corpo = document.getElementById("corpoTestes");
-    const resumo = document.getElementById("resumoTestes");
-    corpo.textContent = "";
-    resumo.textContent = "a correr…";
+    const saida = document.getElementById("saidaTestes");
+    saida.textContent = "";
+    const inicio = Date.now();
 
     fetch("/api/testes").then(function (resposta) {
         return resposta.json();
     }).then(function (dados) {
+        const tempo = ((Date.now() - inicio) / 1000).toFixed(3);
+
+        //as linhas do terminal: uma por teste e, no fim, o resumo do unittest
+        const linhas = [];
         for (const teste of dados.testes) {
-            const linha = document.createElement("tr");
-
-            const nome = document.createElement("td");
-            nome.className = "iban-mono";
-            nome.textContent = teste.nome;
-
-            const estado = document.createElement("td");
-            estado.className = "text-end";
-            const badge = document.createElement("span");
-            badge.className = "badge " + (teste.ok ? "text-bg-success" : "text-bg-danger");
-            badge.textContent = teste.ok ? "passou" : "falhou";
-            estado.appendChild(badge);
-
-            linha.appendChild(nome);
-            linha.appendChild(estado);
-            corpo.appendChild(linha);
-
-            //se falhou, mostrar o motivo na linha a seguir
+            linhas.push({
+                texto: teste.nome + " ... " + (teste.ok ? "ok" : "FAIL"),
+                classe: teste.ok ? "linha-ok" : "linha-falha"
+            });
+            //se falhou, o motivo vem logo abaixo, afastado como no terminal
             if (teste.problema) {
-                const detalhe = document.createElement("tr");
-                const celula = document.createElement("td");
-                celula.colSpan = 2;
-                celula.className = "text-danger small";
-                celula.textContent = teste.problema;
-                detalhe.appendChild(celula);
-                corpo.appendChild(detalhe);
+                linhas.push({ texto: "    " + teste.problema, classe: "linha-falha" });
             }
         }
+        linhas.push({ texto: "-".repeat(70), classe: "linha-separador" });
+        linhas.push({ texto: "Ran " + dados.total + " tests in " + tempo + "s", classe: "" });
+        linhas.push({ texto: "", classe: "" });
 
-        resumo.textContent = dados.passaram + " de " + dados.total + " testes passaram";
+        const falhas = dados.total - dados.passaram;
+        linhas.push({
+            texto: falhas == 0 ? "OK" : "FAILED (failures=" + falhas + ")",
+            classe: falhas == 0 ? "linha-ok" : "linha-falha"
+        });
+
+        //mostrar as linhas uma a uma, como um terminal a correr de verdade
+        let atraso = 0;
+        for (const linha of linhas) {
+            setTimeout(function () {
+                const pedaco = document.createElement("span");
+                pedaco.className = linha.classe;
+                pedaco.textContent = linha.texto;
+                saida.appendChild(pedaco);
+                saida.appendChild(document.createTextNode("\n"));
+                saida.scrollTop = saida.scrollHeight;
+            }, atraso);
+            atraso = atraso + 30;
+        }
     }).catch(function () {
-        resumo.textContent = "não foi possível correr os testes";
+        saida.textContent = "não foi possível correr os testes";
     });
 }
 

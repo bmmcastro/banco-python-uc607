@@ -106,22 +106,17 @@
         </div>
         <p class="text-secondary small mb-3">
             Os 28 testes do projeto (<span class="iban-mono">testes/test_testes.py</span>) a correr
-            no servidor, um a um — o mesmo que <span class="iban-mono">python -m testes.test_testes</span> no terminal.
+            no servidor e a sair como no terminal — o mesmo que <span class="iban-mono">python -m testes.test_testes</span>.
         </p>
-        <div class="table-responsive">
-            <table class="table tabela-banco align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Teste</th>
-                        <th class="text-end">Estado</th>
-                    </tr>
-                </thead>
-                <tbody id="corpoTestes">
-                    <tr><td colspan="2" class="text-center text-secondary">os testes ainda não correram</td></tr>
-                </tbody>
-            </table>
+        <div class="terminal-testes">
+            <div class="barra">
+                <span class="ponto" style="background-color: #ff5f57;"></span>
+                <span class="ponto" style="background-color: #febc2e;"></span>
+                <span class="ponto" style="background-color: #28c840;"></span>
+                <span class="ms-2 iban-mono">python -m testes.test_testes</span>
+            </div>
+            <pre id="saidaTestes">os testes ainda não correram</pre>
         </div>
-        <div class="text-end fw-bold mt-3" id="resumoTestes"></div>
     </div>
 </section>
 

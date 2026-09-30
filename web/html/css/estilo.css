@@ -323,3 +323,43 @@ h1, h2, h3, h4, h5, h6 {
     height: 14px;
     opacity: 0.85;
 }
+
+/* ---------- terminal dos testes unitários (página do estado) ---------- */
+.terminal-testes {
+    background-color: #0d0d10;
+    border: 1px solid var(--hairline);
+    border-radius: var(--raio-campo);
+    overflow: hidden;
+}
+
+.terminal-testes .barra {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--texto-secundario);
+    font-size: 0.75rem;
+}
+
+.terminal-testes .ponto {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.terminal-testes pre {
+    margin: 0;
+    padding: 1rem 1.1rem;
+    max-height: 420px;
+    overflow: auto;
+    color: #d6d9e0;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.linha-ok { color: var(--verde); }
+.linha-falha { color: var(--vermelho); }
+.linha-separador { color: #6a6f7a; }

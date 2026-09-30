@@ -28,7 +28,7 @@
                 <li class="nav-item"><a class="nav-link active" href="/faq">FAQ</a></li>
             </ul>
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-                <li class="nav-item"><a class="nav-link" href="/estado">Estado da API</a></li>
+                <li class="nav-item"><a class="nav-link" href="/estado">Estado da API e PyTest</a></li>
                 <li class="nav-item"><a class="btn btn-sm btn-brand px-3" href="/homebanking">Homebanking</a></li>
                 <li class="nav-item">
                     <button id="botaoTema" class="btn btn-sm btn-outline-secondary border-0" title="Trocar tema">☀️</button>
@@ -156,14 +156,16 @@
         <div class="accordion-item">
             <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8">
-                    O que é a página "Estado da API"?
+                    O que é a página "Estado da API e PyTest"?
                 </button>
             </h2>
             <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                 <div class="accordion-body text-secondary">
                     É uma página que testa, a partir do browser (JavaScript), se o Python do
                     servidor está a responder. Mostra cada endpoint da API, se respondeu e
-                    quanto tempo demorou.
+                    quanto tempo demorou. E tem mais: com um clique correm-se os 28 testes
+                    unitários do projeto (escritos em unittest, compatíveis com o pytest) e a
+                    saída aparece como no terminal.
                 </div>
             </div>
         </div>

@@ -11,7 +11,7 @@ Código: https://github.com/bmmcastro/banco-python-uc607
 Contas de demonstração: `bruno / bruno123`, `rui / rui123`, `amanda / amanda123` e `mateus / mateus123`
 
 O site tem um menu à esquerda (Início, Sobre e FAQ) e à direita o **Homebanking**
-(entrar/criar conta e usar o sistema) e o **Estado da API e PyTest**, que testa do browser
+(entrar/criar conta e usar o sistema) e o **Estado da API e Testes**, que testa do browser
 (JavaScript) se o Python do servidor está a responder, endpoint a endpoint —
 e onde, com um clique, correm-se todos os testes do projeto no servidor
 (26 unittest + 4 pytest, juntos).

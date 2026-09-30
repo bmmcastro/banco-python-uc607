@@ -20,7 +20,7 @@ A página **Sobre** explica o sistema: https://bancopy607.algarit.pt/sobre
 ```
 pip install -r requirements.txt   uma vez só
 python main.py                    o programa no terminal
-python -m testes.testes           os testes unitários
+python -m testes.test_testes      os testes unitários
 python servidor.py                a interface web em http://127.0.0.1:5000
 ```
 

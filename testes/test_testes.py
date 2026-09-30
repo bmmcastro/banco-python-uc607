@@ -1,4 +1,4 @@
-#testes ao sistema (correr com: python -m testes.testes a partir da pasta do projeto)
+#testes ao sistema (correr com: python -m testes.test_testes a partir da pasta do projeto)
 import os
 import sys
 

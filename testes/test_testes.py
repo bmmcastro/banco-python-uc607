@@ -79,6 +79,7 @@ class TestBanco(unittest.TestCase):
         entrar(self.utilizadores, "bruno", "errada1")
         entrar(self.utilizadores, "bruno", "errada2")
         utilizador = entrar(self.utilizadores, "bruno", "bruno123")
+        assert utilizador != None  #com a password certa o entrar tem de devolver o utilizador
         self.assertEqual(utilizador.username, "bruno")
 
     def test_entrar_com_username_inexistente(self):

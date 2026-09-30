@@ -2,7 +2,9 @@
 //guarda as páginas e os ficheiros do site para funcionar offline
 //os pedidos à API (/api/...) nunca são guardados: os dados do banco são sempre frescos
 
-const NOME_CACHE = "banco-uc607-v1";
+//mudar o nome da cache (v1, v2, ...) sempre que os ficheiros do site mudarem,
+//para os utilizadores receberem a versão nova em vez da guardada
+const NOME_CACHE = "banco-uc607-v2";
 
 //o que fica guardado logo na instalação
 const FICHEIROS = [

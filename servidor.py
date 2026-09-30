@@ -1,6 +1,7 @@
 #servidor web do Banco Python UC607 (Flask)
 #serve as páginas da pasta web/html e a API que liga o site às funções do pacote banco
 import os
+import unittest
 from datetime import datetime
 
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
@@ -132,6 +133,51 @@ def api_estado():
         "hora": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "contas": len(contas),
         "transacoes": len(transacoes)
+    })
+
+#resultado dos testes que guarda, para cada teste, o nome e se passou
+#(é o que o site precisa para mostrar a lista com o verde/vermelho)
+class ResultadoTestes(unittest.TestResult):
+    def __init__(self):
+        super().__init__()
+        self.registos = []
+
+    def startTest(self, teste):
+        super().startTest(teste)
+        self.registos.append({"nome": teste.id().split(".")[-1], "ok": True, "problema": ""})
+
+    def addFailure(self, teste, erro):
+        super().addFailure(teste, erro)
+        self._marcar(teste, erro)
+
+    def addError(self, teste, erro):
+        super().addError(teste, erro)
+        self._marcar(teste, erro)
+
+    def _marcar(self, teste, erro):
+        #o teste falhou ou deu erro: marcar o registo e guardar o motivo
+        nome = teste.id().split(".")[-1]
+        for registo in self.registos:
+            if registo["nome"] == nome:
+                registo["ok"] = False
+                registo["problema"] = str(erro[1]) or "falhou"
+
+@app.route("/api/testes")
+def api_testes():
+    #correr os testes unitários do projeto no servidor e devolver o resultado de cada um
+    #(é o mesmo que python -m testes.test_testes no terminal)
+    from testes import test_testes
+
+    suite = unittest.defaultTestLoader.loadTestsFromModule(test_testes)
+    resultado = ResultadoTestes()
+    suite.run(resultado)
+
+    passaram = resultado.testsRun - len(resultado.failures) - len(resultado.errors)
+    return jsonify({
+        "ok": True,
+        "total": resultado.testsRun,
+        "passaram": passaram,
+        "testes": resultado.registos
     })
 
 @app.route("/api/conta")

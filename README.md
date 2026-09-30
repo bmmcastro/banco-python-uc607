@@ -12,7 +12,8 @@ Contas de demonstração: `bruno / bruno123`, `rui / rui123`, `amanda / amanda12
 
 O site tem um menu à esquerda (Início, Sobre e FAQ) e à direita o **Homebanking**
 (entrar/criar conta e usar o sistema) e o **Estado da API**, que testa do browser
-(JavaScript) se o Python do servidor está a responder, endpoint a endpoint.
+(JavaScript) se o Python do servidor está a responder, endpoint a endpoint —
+e onde, com um clique, também se correm os testes unitários do projeto no servidor.
 A página **Sobre** explica o sistema: https://bancopy607.algarit.pt/sobre
 
 ## Como correr (a partir desta pasta)

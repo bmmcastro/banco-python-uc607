@@ -76,3 +76,51 @@ document.getElementById("botaoVerificar").addEventListener("click", verificarTud
 
 //verificar logo quando a página abre
 verificarTudo();
+
+//os testes unitários do projeto: correm no servidor quando se clica no botão
+function correrTestes() {
+    const corpo = document.getElementById("corpoTestes");
+    const resumo = document.getElementById("resumoTestes");
+    corpo.textContent = "";
+    resumo.textContent = "a correr…";
+
+    fetch("/api/testes").then(function (resposta) {
+        return resposta.json();
+    }).then(function (dados) {
+        for (const teste of dados.testes) {
+            const linha = document.createElement("tr");
+
+            const nome = document.createElement("td");
+            nome.className = "iban-mono";
+            nome.textContent = teste.nome;
+
+            const estado = document.createElement("td");
+            estado.className = "text-end";
+            const badge = document.createElement("span");
+            badge.className = "badge " + (teste.ok ? "text-bg-success" : "text-bg-danger");
+            badge.textContent = teste.ok ? "passou" : "falhou";
+            estado.appendChild(badge);
+
+            linha.appendChild(nome);
+            linha.appendChild(estado);
+            corpo.appendChild(linha);
+
+            //se falhou, mostrar o motivo na linha a seguir
+            if (teste.problema) {
+                const detalhe = document.createElement("tr");
+                const celula = document.createElement("td");
+                celula.colSpan = 2;
+                celula.className = "text-danger small";
+                celula.textContent = teste.problema;
+                detalhe.appendChild(celula);
+                corpo.appendChild(detalhe);
+            }
+        }
+
+        resumo.textContent = dados.passaram + " de " + dados.total + " testes passaram";
+    }).catch(function () {
+        resumo.textContent = "não foi possível correr os testes";
+    });
+}
+
+document.getElementById("botaoTestes").addEventListener("click", correrTestes);

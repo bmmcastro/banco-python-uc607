@@ -44,6 +44,7 @@
     <p class="subtitulo">
         Esta página testa a ligação entre o JavaScript do browser e o Python do servidor:
         faz um pedido a cada endpoint da API e mostra se respondeu e quanto tempo demorou.
+        Mais abaixo também se podem correr os testes unitários do projeto no servidor.
     </p>
 </header>
 
@@ -93,6 +94,34 @@
             Os endpoints com sessão respondem "Não tens sessão iniciada." quando não há login —
             isso também prova que o Python está vivo e a responder em JSON.
         </p>
+    </div>
+</section>
+
+<!--testes unitários do projeto-->
+<section class="container pb-5" style="max-width: 860px;">
+    <div class="card card-banco p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h5 class="fw-bold mb-0">🧪 Testes unitários</h5>
+            <button id="botaoTestes" class="btn btn-sm btn-brand">Correr os testes</button>
+        </div>
+        <p class="text-secondary small mb-3">
+            Os 28 testes do projeto (<span class="iban-mono">testes/test_testes.py</span>) a correr
+            no servidor, um a um — o mesmo que <span class="iban-mono">python -m testes.test_testes</span> no terminal.
+        </p>
+        <div class="table-responsive">
+            <table class="table tabela-banco align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Teste</th>
+                        <th class="text-end">Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTestes">
+                    <tr><td colspan="2" class="text-center text-secondary">os testes ainda não correram</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="text-end fw-bold mt-3" id="resumoTestes"></div>
     </div>
 </section>
 

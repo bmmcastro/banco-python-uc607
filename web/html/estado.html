@@ -44,8 +44,8 @@
     <p class="subtitulo">
         Esta página testa a ligação entre o JavaScript do browser e o Python do servidor:
         faz um pedido a cada endpoint da API e mostra se respondeu e quanto tempo demorou.
-        Mais abaixo também se correm os 26 testes unitários do projeto — escritos na
-        biblioteca unittest e compatíveis com o pytest.
+        Mais abaixo correm-se os 30 testes do projeto, todos juntos:
+        26 escritos em unittest e 4 em pytest.
     </p>
 </header>
 
@@ -102,22 +102,21 @@
 <section class="container pb-5" style="max-width: 860px;">
     <div class="card card-banco p-4">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h5 class="fw-bold mb-0">🧪 Testes unitários (pytest)</h5>
+            <h5 class="fw-bold mb-0">🧪 Testes (unittest + pytest)</h5>
             <button id="botaoTestes" class="btn btn-sm btn-brand">Correr os testes</button>
         </div>
         <p class="text-secondary small mb-3">
-            Os 26 testes do projeto (<span class="iban-mono">testes/test_testes.py</span>) a correr
-            no servidor e a sair como no terminal — o mesmo que <span class="iban-mono">python -m testes.test_testes</span>.
-            São escritos na biblioteca unittest e correm na mesma no pytest
-            (<span class="iban-mono">python -m pytest testes/</span>, que corre também os 4 de
-            <span class="iban-mono">testes/test_projeto.py</span>).
+            Todos os testes do projeto juntos: 26 em unittest
+            (<span class="iban-mono">testes/test_testes.py</span>) e 4 em pytest
+            (<span class="iban-mono">testes/test_projeto.py</span>), a correr no servidor
+            com a saída como no terminal — o mesmo que <span class="iban-mono">python -m pytest testes/</span>.
         </p>
         <div class="terminal-testes">
             <div class="barra">
                 <span class="ponto" style="background-color: #ff5f57;"></span>
                 <span class="ponto" style="background-color: #febc2e;"></span>
                 <span class="ponto" style="background-color: #28c840;"></span>
-                <span class="ms-2 iban-mono">python -m testes.test_testes</span>
+                <span class="ms-2 iban-mono">python -m pytest testes/</span>
             </div>
             <pre id="saidaTestes">os testes ainda não correram</pre>
         </div>

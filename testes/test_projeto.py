@@ -28,7 +28,7 @@ def arranjar():
 
 #teste ao utilizador duplicado na criação
 def test_utilizador_duplicado_na_criacao():
-    utilizadores, contas, transacoes = arranjar()
+    utilizadores, contas, _ = arranjar()
 
     with pytest.raises(UtilizadorJaExisteError):
         criar_utilizador(utilizadores, contas, "bruno", "outra123")
@@ -36,7 +36,7 @@ def test_utilizador_duplicado_na_criacao():
 
 #teste ao utilizador inexistente na transferência
 def test_utilizador_inexistente_na_transferencia():
-    utilizadores, contas, transacoes = arranjar()
+    _, contas, transacoes = arranjar()
 
     with pytest.raises(UtilizadorInexistenteError):
         transferir(contas, transacoes, "bruno", "PT50 9999", 10)
@@ -44,7 +44,7 @@ def test_utilizador_inexistente_na_transferencia():
 
 #teste à transferência com sucesso
 def test_transferencia_com_sucesso():
-    utilizadores, contas, transacoes = arranjar()
+    _, contas, transacoes = arranjar()
 
     transferir(contas, transacoes, "bruno", "PT50 0002", 25)
 
@@ -55,7 +55,7 @@ def test_transferencia_com_sucesso():
 
 #teste ao saldo insuficiente na transferência
 def test_saldo_insuficiente_na_transferencia():
-    utilizadores, contas, transacoes = arranjar()
+    _, contas, transacoes = arranjar()
 
     with pytest.raises(SaldoInsuficienteError):
         transferir(contas, transacoes, "bruno", "PT50 0002", 500)

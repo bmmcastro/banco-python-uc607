@@ -164,18 +164,27 @@ class ResultadoTestes(unittest.TestResult):
 
 @app.route("/api/testes")
 def api_testes():
-    #correr os testes unitários do projeto no servidor e devolver o resultado de cada um
-    #(é o mesmo que python -m testes.test_testes no terminal)
-    from testes import test_testes
+    #correr os testes do projeto no servidor e devolver o resultado de cada um,
+    #todos juntos: os de unittest correm pela suite, os de pytest são funções
+    #soltas e correm-se uma a uma
+    from testes import test_testes, test_projeto
 
     suite = unittest.defaultTestLoader.loadTestsFromModule(test_testes)
     resultado = ResultadoTestes()
     suite.run(resultado)
 
-    passaram = resultado.testsRun - len(resultado.failures) - len(resultado.errors)
+    for nome in sorted(dir(test_projeto)):
+        if nome.startswith("test_"):
+            try:
+                getattr(test_projeto, nome)()
+                resultado.registos.append({"nome": nome, "ok": True, "problema": ""})
+            except Exception as erro:
+                resultado.registos.append({"nome": nome, "ok": False, "problema": str(erro) or "falhou"})
+
+    passaram = len([registo for registo in resultado.registos if registo["ok"]])
     return jsonify({
         "ok": True,
-        "total": resultado.testsRun,
+        "total": len(resultado.registos),
         "passaram": passaram,
         "testes": resultado.registos
     })

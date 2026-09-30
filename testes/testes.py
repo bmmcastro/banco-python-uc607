@@ -19,7 +19,7 @@ from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, Sal
 from banco.relatorio import relatorio_contas, relatorio_transferencias
 
 
-class TestesBanco(unittest.TestCase):
+class TestBanco(unittest.TestCase):
 
     def setUp(self):
         #utilizadores e contas de teste usados por todos os testes

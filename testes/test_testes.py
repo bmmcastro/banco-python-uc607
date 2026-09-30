@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from banco.modelos import Utilizador, Conta, Aplicacao, Movimento
 from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, ordenar_registos, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
 from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento, listar_movimentos
-from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
+from banco.erros import UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.relatorio import relatorio_contas, relatorio_transferencias
 
 
@@ -34,16 +34,6 @@ class TestBanco(unittest.TestCase):
         #limpar as tentativas de login para cada teste começar igual
         limpar_tentativas("bruno")
         limpar_tentativas("ana")
-
-    def test_utilizador_duplicado(self):
-        #criar um utilizador que já existe tem de dar erro
-        with self.assertRaises(UtilizadorJaExisteError):
-            criar_utilizador(self.utilizadores, self.contas, "bruno", "outra123")
-
-    def test_utilizador_inexistente(self):
-        #transferir para um IBAN que não existe tem de dar erro
-        with self.assertRaises(UtilizadorInexistenteError):
-            transferir(self.contas, self.transacoes, "bruno", "PT50 9999", 10)
 
     def test_saldo_insuficiente(self):
         #levantar mais do que o saldo tem de dar erro

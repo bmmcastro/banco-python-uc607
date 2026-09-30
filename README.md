@@ -23,7 +23,7 @@ A página **Sobre** explica o sistema: https://bancopy607.algarit.pt/sobre
 pip install -r requirements.txt   uma vez só
 python main.py                    o programa no terminal
 python -m testes.test_testes      os testes unitários
-python -m pytest testes/          os testes todos no pytest (32)
+python -m pytest testes/          os testes todos no pytest (30)
 python servidor.py                a interface web em http://127.0.0.1:5000
 ```
 
@@ -72,9 +72,9 @@ projeto_banco/
 
 ## Testes
 
-`testes/test_testes.py` tem 28 testes unitários (unittest): utilizador duplicado e inexistente, saldo insuficiente, levantamento, depósito, bloqueio de login, exportação e pesquisa de transações, transferências por ficheiro, valores inválidos, retorno (taxa negativa e limites), aplicações (aplicar, libertar com juros, situação e cancelar), estatísticas dos relatórios, registo de movimentos e ordenação por valor e por data.
+`testes/test_testes.py` tem 26 testes unitários (unittest): saldo insuficiente, levantamento, depósito, bloqueio de login, exportação e pesquisa de transações, transferências por ficheiro, valores inválidos, retorno (taxa negativa e limites), aplicações (aplicar, libertar com juros, situação e cancelar), estatísticas dos relatórios, registo de movimentos e ordenação por valor e por data.
 
-O projeto tem ainda `testes/test_projeto.py` com 4 testes escritos diretamente em pytest (utilizador duplicado na criação, utilizador inexistente na transferência, transferência com sucesso e saldo insuficiente na transferência). O pytest corre tudo: `python -m pytest testes/` passa os 32.
+O projeto tem ainda `testes/test_projeto.py` com 4 testes escritos diretamente em pytest (utilizador duplicado na criação, utilizador inexistente na transferência, transferência com sucesso e saldo insuficiente na transferência) — sem repetir o que já está coberto no outro módulo. O pytest corre tudo: `python -m pytest testes/` passa os 30.
 
 ## Bibliotecas usadas
 

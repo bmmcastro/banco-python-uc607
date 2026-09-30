@@ -44,7 +44,7 @@
     <p class="subtitulo">
         Esta página testa a ligação entre o JavaScript do browser e o Python do servidor:
         faz um pedido a cada endpoint da API e mostra se respondeu e quanto tempo demorou.
-        Mais abaixo também se correm os 28 testes unitários do projeto — escritos na
+        Mais abaixo também se correm os 26 testes unitários do projeto — escritos na
         biblioteca unittest e compatíveis com o pytest.
     </p>
 </header>
@@ -106,10 +106,11 @@
             <button id="botaoTestes" class="btn btn-sm btn-brand">Correr os testes</button>
         </div>
         <p class="text-secondary small mb-3">
-            Os 28 testes do projeto (<span class="iban-mono">testes/test_testes.py</span>) a correr
+            Os 26 testes do projeto (<span class="iban-mono">testes/test_testes.py</span>) a correr
             no servidor e a sair como no terminal — o mesmo que <span class="iban-mono">python -m testes.test_testes</span>.
             São escritos na biblioteca unittest e correm na mesma no pytest
-            (<span class="iban-mono">python -m pytest testes/</span>).
+            (<span class="iban-mono">python -m pytest testes/</span>, que corre também os 4 de
+            <span class="iban-mono">testes/test_projeto.py</span>).
         </p>
         <div class="terminal-testes">
             <div class="barra">

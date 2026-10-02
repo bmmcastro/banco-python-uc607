@@ -1,20 +1,30 @@
-#tudo o que mexe em ficheiros: a base de dados sqlite e os ficheiros csv
-#nota: optámos por uma base de dados sqlite para a persistência dos dados
-#(utilizadores, contas, transações e aplicações sobrevivem ao fechar o programa).
-#a manipulação de ficheiros pedida no enunciado está nas duas funcionalidades
-#de csv: a exportação do histórico para transacoes/<username>.csv (guardar_csv)
-#e a importação das transferências por ficheiro transferencias/<username>.csv
-#(guardar/ler/apagar_ficheiro_transferencias aqui, e a leitura e validação das
-#linhas em transferir_por_ficheiro no operacoes.py)
+# tudo o que mexe em ficheiros: a base de dados sqlite e os ficheiros csv
+# nota: optámos por uma base de dados sqlite para a persistência dos dados
+# (utilizadores, contas, transações e aplicações sobrevivem ao fechar o
+# programa).
+# a manipulação de ficheiros pedida no enunciado está nas duas funcionalidades
+# de csv: a exportação do histórico para transacoes/<username>.csv
+# (guardar_csv) e a importação das transferências por ficheiro
+# transferencias/<username>.csv
+# (guardar/ler/apagar_ficheiro_transferencias aqui, e a leitura e validação
+# das linhas em transferir_por_ficheiro no operacoes.py)
 import os
 import sqlite3
 import csv
 import time
 from datetime import datetime
 
-from banco.modelos import Utilizador, Conta, Transacao, Aplicacao, Movimento, FORMATO_DATA
+from banco.modelos import (
+    Utilizador,
+    Conta,
+    Transacao,
+    Aplicacao,
+    Movimento,
+    FORMATO_DATA,
+)
 
-#criar as tabelas no ficheiro banco.db (só cria se ainda não existirem)
+
+# criar as tabelas no ficheiro banco.db (só cria se ainda não existirem)
 def criar_tabelas():
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
@@ -80,7 +90,8 @@ def criar_tabelas():
     ligacao.commit()
     ligacao.close()
 
-#carregar os dados guardados no banco.db para o sistema
+
+# carregar os dados guardados no banco.db para o sistema
 def carregar_dados():
     utilizadores = {}
     contas = {}
@@ -88,15 +99,21 @@ def carregar_dados():
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
 
-    #migração: nas bases de dados antigas as passwords vinham na tabela contas
-    colunas = [linha[1] for linha in cursor.execute("PRAGMA table_info(contas)")]
+    # migração: nas bases de dados antigas as passwords vinham na tabela contas
+    colunas = [linha[1]
+               for linha in cursor.execute("PRAGMA table_info(contas)")]
     if "password" in colunas:
-        quantidade = cursor.execute("SELECT COUNT(*) FROM utilizadores").fetchone()[0]
+        quantidade = cursor.execute(
+            "SELECT COUNT(*) FROM utilizadores"
+        ).fetchone()[0]
         if quantidade == 0:
-            cursor.execute("INSERT INTO utilizadores (username, password) SELECT username, password FROM contas")
+            cursor.execute(
+                "INSERT INTO utilizadores (username, password) "
+                "SELECT username, password FROM contas"
+            )
             ligacao.commit()
 
-    #cada linha vem como um tuplo, separa-se logo nas variáveis
+    # cada linha vem como um tuplo, separa-se logo nas variáveis
     for username, password in cursor.execute(
         "SELECT username, password FROM utilizadores"
     ):
@@ -107,10 +124,15 @@ def carregar_dados():
     ):
         contas[username] = Conta(username, valor, iban)
 
-    for data, valor, iban_origem, username_origem, iban_destino, username_destino in cursor.execute(
-        "SELECT data, valor, iban_origem, username_origem, iban_destino, username_destino FROM transacoes"
-    ):
-        transacoes.append(Transacao(data, valor, iban_origem, username_origem, iban_destino, username_destino))
+    consulta = (
+        "SELECT data, valor, iban_origem, username_origem, "
+        "iban_destino, username_destino FROM transacoes"
+    )
+    for linha in cursor.execute(consulta):
+        transacao = Transacao(
+            linha[0], linha[1], linha[2], linha[3], linha[4], linha[5]
+        )
+        transacoes.append(transacao)
 
     aplicacoes = []
     for username, valor, taxa, meses, data_fim in cursor.execute(
@@ -121,8 +143,11 @@ def carregar_dados():
     ligacao.close()
     return utilizadores, contas, transacoes, aplicacoes
 
-#guardar os dados do sistema no banco.db (apaga o que lá estava e guarda tudo de novo)
-#se a base de dados estiver ocupada (dois pedidos do site ao mesmo tempo), tenta outra vez
+
+# guardar os dados do sistema no banco.db (apaga o que lá estava e guarda tudo
+# de novo)
+# se a base de dados estiver ocupada (dois pedidos do site ao mesmo tempo),
+# tenta outra vez
 def guardar_dados(utilizadores, contas, transacoes):
     for tentativa in range(3):
         try:
@@ -135,33 +160,38 @@ def guardar_dados(utilizadores, contas, transacoes):
             for username in utilizadores:
                 utilizador = utilizadores[username]
                 cursor.execute(
-                    "INSERT INTO utilizadores (username, password) VALUES (?, ?)",
+                    "INSERT INTO utilizadores "
+                    "(username, password) VALUES (?, ?)",
                     (utilizador.username, utilizador.password)
                 )
 
             for username in contas:
                 conta = contas[username]
                 cursor.execute(
-                    "INSERT INTO contas (username, valor, iban) VALUES (?, ?, ?)",
+                    "INSERT INTO contas (username, valor, iban) "
+                    "VALUES (?, ?, ?)",
                     (conta.username, conta.valor, conta.iban)
                 )
 
             for transacao in transacoes:
                 cursor.execute(
-                    "INSERT INTO transacoes (data, valor, iban_origem, username_origem, iban_destino, username_destino) "
+                    "INSERT INTO transacoes (data, valor, iban_origem, "
+                    "username_origem, iban_destino, username_destino) "
                     "VALUES (?, ?, ?, ?, ?, ?)",
-                    (transacao.data, transacao.valor, transacao.iban_origem, transacao.username_origem,
+                    (transacao.data, transacao.valor,
+                     transacao.iban_origem, transacao.username_origem,
                      transacao.iban_destino, transacao.username_destino)
                 )
 
-            ligacao.commit()  #confirmar as alterações no ficheiro
+            ligacao.commit()  # confirmar as alterações no ficheiro
             ligacao.close()
             break
         except sqlite3.OperationalError:
-            time.sleep(0.2)  #a base de dados estava ocupada, tentar outra vez
+            time.sleep(0.2)  # a base de dados estava ocupada, tentar outra vez
 
-#dados de teste da primeira execução (quando a base de dados ainda está vazia):
-#dois utilizadores e uma transferência de exemplo entre eles
+
+# dados de teste da primeira execução (quando a base de dados ainda está
+# vazia): dois utilizadores e uma transferência de exemplo entre eles
 def criar_dados_iniciais():
     utilizadores = {}
     contas = {}
@@ -172,43 +202,54 @@ def criar_dados_iniciais():
     utilizadores["ana"] = Utilizador("ana", "ana123")
     contas["ana"] = Conta("ana", 200, "PT50 0002")
 
-    #transação de exemplo: o bruno transferiu 50 para a ana
-    #(a transferência mexe nos saldos: tira ao bruno e dá à ana)
+    # transação de exemplo: o bruno transferiu 50 para a ana
+    # (a transferência mexe nos saldos: tira ao bruno e dá à ana)
     contas["bruno"].valor = contas["bruno"].valor - 50
     contas["ana"].valor = contas["ana"].valor + 50
-    transacao = Transacao("07/09/2026 10:00", 50, "PT50 0001", "bruno", "PT50 0002", "ana")
+    transacao = Transacao(
+        "07/09/2026 10:00", 50, "PT50 0001", "bruno", "PT50 0002", "ana"
+    )
     transacoes.append(transacao)
 
     return utilizadores, contas, transacoes
 
-#tentativas de login erradas e bloqueios (guardadas na base de dados para
-#funcionarem igual no terminal e no site, mesmo com o servidor a correr em processos separados)
+# tentativas de login erradas e bloqueios (guardadas na base de dados para
+# funcionarem igual no terminal e no site, mesmo com o servidor a correr em
+# processos separados)
 
-#ver o estado das tentativas de um utilizador: devolve (tentativas, bloqueado_ate)
+
+# ver o estado das tentativas de um utilizador: devolve (tentativas,
+# bloqueado_ate)
 def ver_bloqueio(username):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
-    cursor.execute("SELECT tentativas, bloqueado_ate FROM bloqueios WHERE username = ?", (username,))
+    cursor.execute(
+        "SELECT tentativas, bloqueado_ate FROM bloqueios WHERE username = ?",
+        (username,)
+    )
     linha = cursor.fetchone()
     ligacao.close()
 
-    if linha == None:
+    if linha is None:
         return 0, 0
     return linha[0], linha[1]
 
-#anotar as tentativas erradas (e até quando está bloqueado, se for o caso)
+
+# anotar as tentativas erradas (e até quando está bloqueado, se for o caso)
 def anotar_tentativa(username, tentativas, bloqueado_ate):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
     cursor.execute("DELETE FROM bloqueios WHERE username = ?", (username,))
     cursor.execute(
-        "INSERT INTO bloqueios (username, tentativas, bloqueado_ate) VALUES (?, ?, ?)",
+        "INSERT INTO bloqueios (username, tentativas, bloqueado_ate) "
+        "VALUES (?, ?, ?)",
         (username, tentativas, bloqueado_ate)
     )
     ligacao.commit()
     ligacao.close()
 
-#esquecer as tentativas de um utilizador (login certo ou fim do bloqueio)
+
+# esquecer as tentativas de um utilizador (login certo ou fim do bloqueio)
 def limpar_tentativas(username):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
@@ -216,56 +257,68 @@ def limpar_tentativas(username):
     ligacao.commit()
     ligacao.close()
 
-#histórico das aplicações: as que já chegaram ao fim do prazo ficam registadas aqui
+# histórico das aplicações: as que já chegaram ao fim do prazo ficam registadas
+# aqui
 
-#guardar uma aplicação terminada no histórico
+
+# guardar uma aplicação terminada no histórico
 def guardar_no_historico(aplicacao):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
     cursor.execute(
-        "INSERT INTO historico_aplicacoes (username, valor, taxa, meses, data_fim, valor_final) VALUES (?, ?, ?, ?, ?, ?)",
-        (aplicacao.username, aplicacao.valor, aplicacao.taxa, aplicacao.meses, aplicacao.data_fim, aplicacao.valor_final)
+        "INSERT INTO historico_aplicacoes (username, valor, taxa, meses, "
+        "data_fim, valor_final) VALUES (?, ?, ?, ?, ?, ?)",
+        (aplicacao.username, aplicacao.valor, aplicacao.taxa,
+         aplicacao.meses, aplicacao.data_fim, aplicacao.valor_final)
     )
     ligacao.commit()
     ligacao.close()
 
-#listar o histórico de aplicações de um utilizador
+
+# listar o histórico de aplicações de um utilizador
 def listar_historico_aplicacoes(username):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
 
     historico = []
-    for username_h, valor, taxa, meses, data_fim, valor_final in cursor.execute(
-        "SELECT username, valor, taxa, meses, data_fim, valor_final FROM historico_aplicacoes WHERE username = ?",
-        (username,)
-    ):
-        aplicacao = Aplicacao(username_h, valor, taxa, meses, data_fim, valor_final)
+    consulta = (
+        "SELECT username, valor, taxa, meses, data_fim, valor_final "
+        "FROM historico_aplicacoes WHERE username = ?"
+    )
+    for linha in cursor.execute(consulta, (username,)):
+        aplicacao = Aplicacao(
+            linha[0], linha[1], linha[2], linha[3], linha[4], linha[5]
+        )
         historico.append(aplicacao)
 
     ligacao.close()
     return historico
 
-#os movimentos da conta: depósitos e levantamentos (ficam registados um a um)
+# os movimentos da conta: depósitos e levantamentos (ficam registados um a um)
 
-#registar um movimento (chamado depois de depositar ou levantar)
+
+# registar um movimento (chamado depois de depositar ou levantar)
 def registar_movimento(username, tipo, valor):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
     cursor.execute(
-        "INSERT INTO movimentos (username, tipo, data, valor) VALUES (?, ?, ?, ?)",
-        (username, tipo, datetime.now().strftime("%d/%m/%Y %H:%M"), valor)
+        "INSERT INTO movimentos (username, tipo, data, valor) "
+        "VALUES (?, ?, ?, ?)",
+        (username, tipo, datetime.now().strftime(FORMATO_DATA), valor)
     )
     ligacao.commit()
     ligacao.close()
 
-#listar os movimentos de um utilizador
+
+# listar os movimentos de um utilizador
 def listar_movimentos(username):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
 
     movimentos = []
     for username_m, tipo, data, valor in cursor.execute(
-        "SELECT username, tipo, data, valor FROM movimentos WHERE username = ?",
+        "SELECT username, tipo, data, valor FROM movimentos "
+        "WHERE username = ?",
         (username,)
     ):
         movimentos.append(Movimento(username_m, tipo, data, valor))
@@ -273,7 +326,8 @@ def listar_movimentos(username):
     ligacao.close()
     return movimentos
 
-#guardar as aplicações (depósitos a prazo) no banco.db
+
+# guardar as aplicações (depósitos a prazo) no banco.db
 def guardar_aplicacoes(aplicacoes):
     ligacao = sqlite3.connect("banco.db")
     cursor = ligacao.cursor()
@@ -281,65 +335,89 @@ def guardar_aplicacoes(aplicacoes):
 
     for aplicacao in aplicacoes:
         cursor.execute(
-            "INSERT INTO aplicacoes (username, valor, taxa, meses, data_fim) VALUES (?, ?, ?, ?, ?)",
-            (aplicacao.username, aplicacao.valor, aplicacao.taxa, aplicacao.meses, aplicacao.data_fim)
+            "INSERT INTO aplicacoes (username, valor, taxa, meses, data_fim) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (aplicacao.username, aplicacao.valor, aplicacao.taxa,
+             aplicacao.meses, aplicacao.data_fim)
         )
 
     ligacao.commit()
     ligacao.close()
 
-#ficheiros de transferências por CSV: vivem na pasta transferencias, um por utilizador
-#(transferencias/<username>.csv) e são apagados quando o utilizador sai do sistema
+# ficheiros de transferências por CSV: vivem na pasta transferencias, um por
+# utilizador
+# (transferencias/<username>.csv) e são apagados quando o utilizador sai do
+# sistema
 
-#o caminho do ficheiro de transferências de um utilizador
+
+# o caminho do ficheiro de transferências de um utilizador
 def caminho_ficheiro_transferencias(username):
     return os.path.join("transferencias", username + ".csv")
 
-#guardar o ficheiro de transferências do utilizador (o site guarda o que foi carregado)
+
+# guardar o ficheiro de transferências do utilizador (o site guarda o que foi
+# carregado)
 def guardar_ficheiro_transferencias(username, conteudo):
     if not os.path.exists("transferencias"):
         os.mkdir("transferencias")
 
-    ficheiro = open(caminho_ficheiro_transferencias(username), "w", encoding="utf-8")
+    ficheiro = open(
+        caminho_ficheiro_transferencias(username), "w", encoding="utf-8"
+    )
     ficheiro.write(conteudo)
     ficheiro.close()
 
-#ler o ficheiro de transferências do utilizador
+
+# ler o ficheiro de transferências do utilizador
 def ler_ficheiro_transferencias(username):
-    ficheiro = open(caminho_ficheiro_transferencias(username), "r", encoding="utf-8")
+    ficheiro = open(
+        caminho_ficheiro_transferencias(username), "r", encoding="utf-8"
+    )
     conteudo = ficheiro.read()
     ficheiro.close()
     return conteudo
 
-#apagar o ficheiro de transferências do utilizador (quando sai do sistema)
+
+# apagar o ficheiro de transferências do utilizador (quando sai do sistema)
 def apagar_ficheiro_transferencias(username):
     if os.path.exists(caminho_ficheiro_transferencias(username)):
         os.remove(caminho_ficheiro_transferencias(username))
 
-#ficheiros das transações exportadas: vivem na pasta transacoes, um por utilizador
-#(transacoes/transacoes_<username>.csv) e são apagados quando o utilizador sai do sistema
+# ficheiros das transações exportadas: vivem na pasta transacoes, um por
+# utilizador
+# (transacoes/transacoes_<username>.csv) e são apagados quando o utilizador sai
+# do sistema
 
-#o caminho do ficheiro de transações exportado de um utilizador
+
+# o caminho do ficheiro de transações exportado de um utilizador
 def caminho_ficheiro_transacoes(username):
     return os.path.join("transacoes", f"transacoes_{username}.csv")
 
-#apagar o ficheiro de transações exportado do utilizador (quando sai do sistema)
-#só o ficheiro dele é apagado: os dos outros utilizadores ficam intactos
+
+# apagar o ficheiro de transações exportado do utilizador (quando sai do
+# sistema)
+# só o ficheiro dele é apagado: os dos outros utilizadores ficam intactos
 def apagar_ficheiro_transacoes(username):
     if os.path.exists(caminho_ficheiro_transacoes(username)):
         os.remove(caminho_ficheiro_transacoes(username))
 
-#guardar as transações de uma conta num ficheiro CSV: devolve o nome do ficheiro criado
-#(o nome tem o username, por isso só é substituído quando o mesmo user exporta de novo)
+
+# guardar as transações de uma conta num ficheiro CSV: devolve o nome do
+# ficheiro criado
+# (o nome tem o username, por isso só é substituído quando o mesmo user exporta
+# de novo)
 def guardar_csv(conta, transacoes_da_conta):
-    #a pasta transacoes é criada se ainda não existir
+    # a pasta transacoes é criada se ainda não existir
     if not os.path.exists("transacoes"):
         os.mkdir("transacoes")
 
     nome_ficheiro = caminho_ficheiro_transacoes(conta.username)
     ficheiro = open(nome_ficheiro, "w", encoding="utf-8", newline="")
     escritor = csv.writer(ficheiro)
-    escritor.writerow(["tipo", "data", "iban origem", "username origem", "iban destino", "username destino", "valor"])
+    escritor.writerow(
+        ["tipo", "data", "iban origem", "username origem",
+         "iban destino", "username destino", "valor"]
+    )
 
     for transacao in transacoes_da_conta:
         if transacao.iban_origem == conta.iban:
@@ -347,8 +425,11 @@ def guardar_csv(conta, transacoes_da_conta):
         else:
             tipo = "Recebida"
 
-        escritor.writerow([tipo, transacao.data, transacao.iban_origem, transacao.username_origem,
-                           transacao.iban_destino, transacao.username_destino, transacao.valor])
+        escritor.writerow(
+            [tipo, transacao.data, transacao.iban_origem,
+             transacao.username_origem, transacao.iban_destino,
+             transacao.username_destino, transacao.valor]
+        )
 
     ficheiro.close()
     return nome_ficheiro

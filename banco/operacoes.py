@@ -1,18 +1,25 @@
-#funções do banco
+# funções do banco
 import csv
 import math
 import time
 from datetime import datetime, timedelta
 
-from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
+from banco.erros import (
+    UtilizadorJaExisteError,
+    UtilizadorInexistenteError,
+    SaldoInsuficienteError,
+    ContaBloqueadaError,
+)
 from banco.modelos import Utilizador, Conta, Transacao, Aplicacao, FORMATO_DATA
 from banco.dados import ver_bloqueio, anotar_tentativa, limpar_tentativas
 
-#limite de tentativas de login: 3 passwords erradas bloqueiam a conta durante 30 segundos
+# limite de tentativas de login: 3 passwords erradas bloqueiam a conta durante
+# 30 segundos
 MAXIMO_TENTATIVAS = 3
 SEGUNDOS_BLOQUEIO = 30
 
-#ver se a password é válida: 6 a 10 caracteres, pelo menos 1 letra e 1 número
+
+# ver se a password é válida: 6 a 10 caracteres, pelo menos 1 letra e 1 número
 def validar_password(password):
     if len(password) < 6 or len(password) > 10:
         return False
@@ -25,100 +32,134 @@ def validar_password(password):
         if caracter.isdigit():
             tem_numero = True
 
-    if tem_letra == False or tem_numero == False:
+    if not tem_letra or not tem_numero:
         return False
 
     return True
 
-#limpar o IBAN escrito pelo utilizador: maiúsculas, sem espaços e sem o PT50 repetido
-def limpar_iban(iban):
-    iban = iban.replace(" ", "")  #tirar os espaços todos
-    iban = iban.upper()           #o pt em minúsculas fica PT
 
-    #se o utilizador já escreveu o PT50, tira-o para não ficar repetido
+# limpar o IBAN escrito pelo utilizador: maiúsculas, sem espaços e sem o PT50
+# repetido
+def limpar_iban(iban):
+    iban = iban.replace(" ", "")  # tirar os espaços todos
+    iban = iban.upper()  # o pt em minúsculas fica PT
+
+    # se o utilizador já escreveu o PT50, tira-o para não ficar repetido
     while iban.startswith("PT50"):
         iban = iban[4:]
 
-    #no fim o IBAN fica sempre no formato do sistema: PT50 seguido do número
+    # no fim o IBAN fica sempre no formato do sistema: PT50 seguido do número
     return "PT50 " + iban
 
-#procurar uma conta pelo IBAN: devolve o username se existir, senão None
+
+# procurar uma conta pelo IBAN: devolve o username se existir, senão None
 def procurar_por_iban(contas, iban):
     for username in contas:
         if contas[username].iban == iban:
             return username
     return None
 
-#gerar um IBAN único: PT50 seguido de um número que ainda não exista no sistema
+
+# gerar um IBAN único: PT50 seguido de um número que ainda não
+# exista no sistema
 def gerar_iban(contas):
     numero = len(contas) + 1
     iban = f"PT50 {numero:04d}"
 
-    #se o número já estiver a ser usado, passa para o próximo
-    while procurar_por_iban(contas, iban) != None:
+    # se o número já estiver a ser usado, passa para o próximo
+    while procurar_por_iban(contas, iban) is not None:
         numero = numero + 1
         iban = f"PT50 {numero:04d}"
 
     return iban
 
-#criar utilizador novo (com a respetiva conta a zeros): levanta erro se não conseguir criar
+
 def criar_utilizador(utilizadores, contas, username, password):
+    """Cria um utilizador novo e a respetiva conta a zeros.
+
+    Levanta UtilizadorJaExisteError se o username já existir e ValueError
+    se o username ou a password não forem válidos.
+    """
     if username == "":
         raise ValueError("O username não pode ser vazio")
 
-    #só letras e números: usernames com barras ou pontos não podem ser usados para fugir da pasta
+    # só letras e números: usernames com barras ou pontos não podem ser usados
+    # para fugir da pasta
     if not username.isalnum():
         raise ValueError("O username só pode ter letras e números")
 
     if username in utilizadores:
         raise UtilizadorJaExisteError("O username já existe no sistema")
 
-    if validar_password(password) == False:
-        raise ValueError("Password inválida: tem de ter entre 6 a 10 caracteres, com pelo menos 1 letra e 1 número")
+    if not validar_password(password):
+        raise ValueError(
+            "Password inválida: tem de ter entre 6 a 10 caracteres, "
+            "com pelo menos 1 letra e 1 número"
+        )
 
     iban = gerar_iban(contas)
     utilizadores[username] = Utilizador(username, password)
-    contas[username] = Conta(username, 0, iban)  #a conta é criada com valor 0
+    contas[username] = Conta(username, 0, iban)  # a conta é criada com valor 0
 
-#entrar: devolve o utilizador se o username e a password estiverem certos, senão None
-#levanta a UtilizadorInexistenteError se o username não existir no sistema
-#depois de 3 tentativas erradas a conta fica bloqueada durante 30 segundos
-#(as tentativas são guardadas no banco.db, por isso valem para o terminal e para o site)
+
 def entrar(utilizadores, username, password):
+    """Entra na conta: devolve o utilizador se os dados estiverem certos.
+
+    Devolve None com a password errada. Levanta
+    UtilizadorInexistenteError se o username não existir no sistema e
+    ContaBloqueadaError depois de 3 tentativas erradas (a conta fica
+    bloqueada 30 segundos; as tentativas são guardadas no banco.db,
+    por isso valem para o terminal e para o site).
+    """
     agora = time.time()
 
     tentativas, bloqueado_ate = ver_bloqueio(username)
 
-    #conta bloqueada: nem a password certa entra
+    # conta bloqueada: nem a password certa entra
     if bloqueado_ate > agora:
         restantes = int(bloqueado_ate - agora)
-        raise ContaBloqueadaError(f"Muitas tentativas erradas. A conta está bloqueada mais {restantes} segundos")
+        raise ContaBloqueadaError(
+            f"Muitas tentativas erradas. A conta está bloqueada "
+            f"mais {restantes} segundos"
+        )
 
-    #entrar com um username que não existe (a mensagem não revela qual dos dois está errado)
+    # entrar com um username que não existe (a mensagem não revela qual dos
+    # dois está errado)
     if username not in utilizadores:
         raise UtilizadorInexistenteError("Username ou password errados")
 
     if utilizadores[username].password == password:
-        #login certo: esquecer as tentativas erradas dessa conta
+        # login certo: esquecer as tentativas erradas dessa conta
         limpar_tentativas(username)
         return utilizadores[username]
 
-    #login errado: contar a tentativa
+    # login errado: contar a tentativa
     tentativas = tentativas + 1
 
     if tentativas >= MAXIMO_TENTATIVAS:
         anotar_tentativa(username, 0, agora + SEGUNDOS_BLOQUEIO)
-        raise ContaBloqueadaError(f"Password errada demasiadas vezes. A conta fica bloqueada durante {SEGUNDOS_BLOQUEIO} segundos")
+        raise ContaBloqueadaError(
+            f"Password errada demasiadas vezes. A conta fica bloqueada "
+            f"durante {SEGUNDOS_BLOQUEIO} segundos"
+        )
 
     anotar_tentativa(username, tentativas, 0)
     return None
 
-#transferir por IBAN: mexe nos dois saldos e registra a transação
+
 def transferir(contas, transacoes, username_origem, iban_destino, valor):
+    """Transfere um valor para a conta dona do IBAN de destino.
+
+    Mexe nos dois saldos e registra a transação com a data e a hora.
+    Levanta UtilizadorInexistenteError se o IBAN não existir, ValueError
+    com um valor inválido e SaldoInsuficienteError se o saldo não chegar.
+    """
     username_destino = procurar_por_iban(contas, iban_destino)
 
-    if username_destino == None:
-        raise UtilizadorInexistenteError("O IBAN de destino não existe no sistema")
+    if username_destino is None:
+        raise UtilizadorInexistenteError(
+            "O IBAN de destino não existe no sistema"
+        )
 
     if username_destino == username_origem:
         raise ValueError("Não podes transferir para a tua própria conta")
@@ -132,11 +173,11 @@ def transferir(contas, transacoes, username_origem, iban_destino, valor):
     if valor > contas[username_origem].valor:
         raise SaldoInsuficienteError("Saldo insuficiente")
 
-    #mexer nos saldos: tira à origem e dá ao destino
+    # mexer nos saldos: tira à origem e dá ao destino
     contas[username_origem].valor = contas[username_origem].valor - valor
     contas[username_destino].valor = contas[username_destino].valor + valor
 
-    #registrar a transação com a data e hora automáticas
+    # registrar a transação com a data e hora automáticas
     data = datetime.now().strftime(FORMATO_DATA)
     transacao = Transacao(
         data,
@@ -148,9 +189,12 @@ def transferir(contas, transacoes, username_origem, iban_destino, valor):
     )
     transacoes.append(transacao)
 
-#transferências em lote a partir de um ficheiro CSV (iban, nome, valor)
-#valida todas as linhas primeiro: o IBAN existe, o nome é o dono certo e há saldo para tudo
-#se houver algum erro não se transfere nada; devolve a lista de erros (vazio = transferências feitas)
+
+# transferências em lote a partir de um ficheiro CSV (iban, nome, valor)
+# valida todas as linhas primeiro: o IBAN existe, o nome é o dono certo e há
+# saldo para tudo
+# se houver algum erro não se transfere nada; devolve a lista de erros (vazio =
+# transferências feitas)
 def transferir_por_ficheiro(contas, transacoes, username_origem, conteudo):
     erros = []
     transferencias = []
@@ -158,65 +202,86 @@ def transferir_por_ficheiro(contas, transacoes, username_origem, conteudo):
 
     leitor = csv.DictReader(conteudo.splitlines())
 
-    #a primeira linha é o cabeçalho, por isso os dados começam na linha 2
+    # a primeira linha é o cabeçalho, por isso os dados começam na linha 2
     for linha in leitor:
         numero = leitor.line_num
 
-        #o cabeçalho tem de ter as três colunas
+        # o cabeçalho tem de ter as três colunas
         if "iban" not in linha or "nome" not in linha or "valor" not in linha:
-            erros.append(f"linha {numero}: faltam colunas (o cabeçalho tem de ser iban,nome,valor)")
+            erros.append(
+                f"linha {numero}: faltam colunas "
+                "(o cabeçalho tem de ser iban,nome,valor)"
+            )
             continue
 
-        #1: o IBAN tem de existir
+        # 1: o IBAN tem de existir
         iban = limpar_iban(linha["iban"])
         dono = procurar_por_iban(contas, iban)
-        if dono == None:
-            erros.append(f"linha {numero}: o IBAN {linha['iban']} não existe no sistema")
+        if dono is None:
+            erros.append(
+                f"linha {numero}: o IBAN {linha['iban']} "
+                "não existe no sistema"
+            )
             continue
 
-        #2: o nome tem de ser o dono do IBAN
+        # 2: o nome tem de ser o dono do IBAN
         nome = linha["nome"].strip()
         if nome != dono:
-            erros.append(f"linha {numero}: o nome {nome} não é o dono do IBAN {iban} (é {dono})")
+            erros.append(
+                f"linha {numero}: o nome {nome} não é o dono "
+                f"do IBAN {iban} (é {dono})"
+            )
             continue
 
-        #3: não se pode transferir para a própria conta
+        # 3: não se pode transferir para a própria conta
         if dono == username_origem:
-            erros.append(f"linha {numero}: não podes transferir para a tua própria conta")
+            erros.append(
+                f"linha {numero}: não podes transferir "
+                "para a tua própria conta"
+            )
             continue
 
-        #4: o valor tem de ser um número maior que zero
+        # 4: o valor tem de ser um número maior que zero
         try:
             valor = float(linha["valor"].replace(",", "."))
         except ValueError:
-            erros.append(f"linha {numero}: o valor {linha['valor']} não é um número")
+            erros.append(
+                f"linha {numero}: o valor {linha['valor']} não é um número"
+            )
             continue
 
         if valor <= 0:
-            erros.append(f"linha {numero}: o valor tem de ser maior que zero")
+            erros.append(
+                f"linha {numero}: o valor tem de ser maior que zero"
+            )
             continue
 
-        #5: o saldo tem de chegar para todas as transferências do ficheiro
+        # 5: o saldo tem de chegar para todas as transferências do ficheiro
         if valor > saldo_disponivel:
-            erros.append(f"linha {numero}: o saldo não chega para todas as transferências")
+            erros.append(
+                f"linha {numero}: o saldo não chega para todas "
+                "as transferências"
+            )
             continue
         saldo_disponivel = saldo_disponivel - valor
 
         transferencias.append((iban, valor))
 
-    #com algum erro não se transfere nada
+    # com algum erro não se transfere nada
     if len(erros) > 0:
         return erros
 
-    #tudo certo: fazer as transferências (o transferir já regista as transações)
+    # tudo certo: fazer as transferências (o transferir já regista as
+    # transações)
     for iban, valor in transferencias:
         transferir(contas, transacoes, username_origem, iban, valor)
 
     return []
 
-#ordenar registos (com .valor e .data) com o selection sort,
-#por valor ou por data, crescente ou decrescente
-#em cada passagem escolhe-se o menor (crescente) ou o maior (decrescente)
+
+# ordenar registos (com .valor e .data) com o selection sort,
+# por valor ou por data, crescente ou decrescente
+# em cada passagem escolhe-se o menor (crescente) ou o maior (decrescente)
 def ordenar_registos(registos, campo, decrescente=False):
     ordenados = registos.copy()
 
@@ -225,7 +290,8 @@ def ordenar_registos(registos, campo, decrescente=False):
         m = i
         for j in range(i + 1, n):
             if campo == "data":
-                #as datas são texto (dd/mm/aaaa hh:mm): converter para comparar bem
+                # as datas são texto (dd/mm/aaaa hh:mm): converter para
+                # comparar bem
                 valor_j = datetime.strptime(ordenados[j].data, FORMATO_DATA)
                 valor_m = datetime.strptime(ordenados[m].data, FORMATO_DATA)
             else:
@@ -242,34 +308,45 @@ def ordenar_registos(registos, campo, decrescente=False):
 
     return ordenados
 
-#pesquisar as transações de uma conta por texto: a pesquisa pode ser uma data,
-#um username, um IBAN ou um valor; devolve a lista das transações que correspondem
+
+# pesquisar as transações de uma conta por texto: a pesquisa pode ser uma data,
+# um username, um IBAN ou um valor; devolve a lista das transações que
+# correspondem
 def pesquisar_transacoes(transacoes, conta, pesquisa):
     encontradas = []
 
     for transacao in transacoes:
-        #só interessam as transações onde esta conta consta (enviadas ou recebidas)
-        if transacao.iban_origem != conta.iban and transacao.iban_destino != conta.iban:
+        # só interessam as transações onde esta conta consta (enviadas ou
+        # recebidas)
+        if (transacao.iban_origem != conta.iban
+                and transacao.iban_destino != conta.iban):
             continue
 
-        #juntar tudo o que se pode pesquisar numa só linha de texto
-        texto = (transacao.data + " " + transacao.username_origem + " " + transacao.iban_origem + " "
-                 + transacao.username_destino + " " + transacao.iban_destino + " " + str(transacao.valor))
+        # juntar tudo o que se pode pesquisar numa só linha de texto
+        texto = (
+            transacao.data + " " + transacao.username_origem + " "
+            + transacao.iban_origem + " " + transacao.username_destino + " "
+            + transacao.iban_destino + " " + str(transacao.valor)
+        )
 
         if pesquisa.lower() in texto.lower():
             encontradas.append(transacao)
 
     return encontradas
 
-#calcular o valor da conta com juro composto, de forma recursiva
-#cada mês o valor é multiplicado pela taxa, até acabarem os meses
-#a taxa pode ser negativa ou positiva: só o valor absoluto tem de ficar entre 0 e 100
+
+# calcular o valor da conta com juro composto, de forma recursiva
+# cada mês o valor é multiplicado pela taxa, até acabarem os meses
+# a taxa pode ser negativa ou positiva: só o valor absoluto tem de ficar entre
+# 0 e 100
 def consultar_retorno(valor, taxa, meses):
     if not math.isfinite(valor) or valor <= 0:
         raise ValueError("O valor tem de ser positivo")
 
     if abs(taxa) > 100:
-        raise ValueError("A taxa de juro tem de ter um valor absoluto entre 0 e 100")
+        raise ValueError(
+            "A taxa de juro tem de ter um valor absoluto entre 0 e 100"
+        )
 
     if meses != int(meses):
         raise ValueError("O número de meses tem de ser um número inteiro")
@@ -277,43 +354,53 @@ def consultar_retorno(valor, taxa, meses):
     if meses < 1 or meses > 12:
         raise ValueError("O número de meses tem de estar entre 1 e 12")
 
-    #caso base: no último mês o valor já rende uma vez
+    # caso base: no último mês o valor já rende uma vez
     if meses == 1:
         return valor * (1 + taxa / 100)
 
     return consultar_retorno(valor, taxa, meses - 1) * (1 + taxa / 100)
 
-#aplicar dinheiro (depósito a prazo): o valor sai do saldo e fica cativo
-#até ao fim do prazo, quando volta ao saldo com os juros somados
+
+# aplicar dinheiro (depósito a prazo): o valor sai do saldo e fica cativo
+# até ao fim do prazo, quando volta ao saldo com os juros somados
 def aplicar_dinheiro(conta, aplicacoes, valor, taxa, meses):
     if not math.isfinite(valor) or valor <= 0:
         raise ValueError("O valor da aplicação tem de ser positivo")
 
     if valor > conta.valor:
-        raise SaldoInsuficienteError("O valor da aplicação não pode ser maior que o saldo")
+        raise SaldoInsuficienteError(
+            "O valor da aplicação não pode ser maior que o saldo"
+        )
 
     if abs(taxa) > 100:
-        raise ValueError("A taxa de juro tem de ter um valor absoluto entre 0 e 100")
+        raise ValueError(
+            "A taxa de juro tem de ter um valor absoluto entre 0 e 100"
+        )
 
     if meses != int(meses) or meses < 1 or meses > 12:
         raise ValueError("O número de meses tem de estar entre 1 e 12")
 
-    #o fim do prazo fica registado (cada mês conta-se como 30 dias)
+    # o fim do prazo fica registado (cada mês conta-se como 30 dias)
     fim = datetime.now() + timedelta(days=30 * int(meses))
-    aplicacoes.append(Aplicacao(conta.username, valor, taxa, int(meses), fim.strftime(FORMATO_DATA)))
+    aplicacoes.append(
+        Aplicacao(conta.username, valor, taxa, int(meses),
+                  fim.strftime(FORMATO_DATA))
+    )
 
-    #o valor aplicado sai do saldo e fica cativo
+    # o valor aplicado sai do saldo e fica cativo
     conta.valor = conta.valor - valor
 
-#quanto vale hoje uma aplicação (os juros já corridos) e quantos dias faltam para o fim
+
+# quanto vale hoje uma aplicação (os juros já corridos) e quantos dias faltam
+# para o fim
 def situacao_aplicacao(aplicacao):
     fim = datetime.strptime(aplicacao.data_fim, FORMATO_DATA)
     agora = datetime.now()
 
-    #a aplicação começou meses*30 dias antes do fim do prazo
+    # a aplicação começou meses*30 dias antes do fim do prazo
     inicio = fim - timedelta(days=30 * aplicacao.meses)
 
-    #os meses completos que já passaram (entre 0 e o prazo todo)
+    # os meses completos que já passaram (entre 0 e o prazo todo)
     dias_passados = (agora - inicio).days
     meses_passados = dias_passados // 30
     if meses_passados < 0:
@@ -321,11 +408,14 @@ def situacao_aplicacao(aplicacao):
     if meses_passados > aplicacao.meses:
         meses_passados = aplicacao.meses
 
-    #o valor de hoje usa a mesma recursão do retorno (sem meses ainda não há juros)
+    # o valor de hoje usa a mesma recursão do retorno (sem meses ainda não há
+    # juros)
     if meses_passados == 0:
         valor_hoje = aplicacao.valor
     else:
-        valor_hoje = consultar_retorno(aplicacao.valor, aplicacao.taxa, meses_passados)
+        valor_hoje = consultar_retorno(
+            aplicacao.valor, aplicacao.taxa, meses_passados
+        )
 
     dias_restantes = (fim - agora).days
     if dias_restantes < 0:
@@ -333,8 +423,9 @@ def situacao_aplicacao(aplicacao):
 
     return valor_hoje, dias_restantes
 
-#cancelar uma aplicação: em vez de esperar pelo fim do prazo,
-#o dinheiro ganho até hoje volta logo ao saldo
+
+# cancelar uma aplicação: em vez de esperar pelo fim do prazo,
+# o dinheiro ganho até hoje volta logo ao saldo
 def cancelar_aplicacao(conta, aplicacoes, numero):
     minhas = []
     for aplicacao in aplicacoes:
@@ -342,24 +433,28 @@ def cancelar_aplicacao(conta, aplicacoes, numero):
             minhas.append(aplicacao)
 
     if numero < 1 or numero > len(minhas):
-        raise ValueError("Escolhe uma aplicação da lista (1 a " + str(len(minhas)) + ")")
+        raise ValueError(
+            "Escolhe uma aplicação da lista (1 a " + str(len(minhas)) + ")"
+        )
 
     aplicacao = minhas[numero - 1]
 
-    #devolve o valor de hoje (o aplicado + os juros já corridos)
+    # devolve o valor de hoje (o aplicado + os juros já corridos)
     valor_hoje, _ = situacao_aplicacao(aplicacao)
     conta.valor = conta.valor + valor_hoje
 
-    #a aplicação sai das ativas e fica marcada com o que rendeu,
-    #com a data do cancelamento (foi quando realmente terminou)
+    # a aplicação sai das ativas e fica marcada com o que rendeu,
+    # com a data do cancelamento (foi quando realmente terminou)
     aplicacao.valor_final = valor_hoje
     aplicacao.data_fim = datetime.now().strftime(FORMATO_DATA)
     aplicacoes.remove(aplicacao)
 
     return aplicacao
 
-#verificar as aplicações da conta: as que chegaram ao fim do prazo
-#devolvem o dinheiro ao saldo, com os juros calculados pela função recursiva do retorno
+
+# verificar as aplicações da conta: as que chegaram ao fim do prazo
+# devolvem o dinheiro ao saldo, com os juros calculados pela função recursiva
+# do retorno
 def verificar_aplicacoes(conta, aplicacoes):
     agora = datetime.now()
     libertadas = []
@@ -370,13 +465,15 @@ def verificar_aplicacoes(conta, aplicacoes):
 
         fim = datetime.strptime(aplicacao.data_fim, FORMATO_DATA)
         if fim <= agora:
-            #os juros do prazo todo, com a mesma recursão do consultar_retorno
-            valor_final = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)
+            # os juros do prazo todo, com a mesma recursão do consultar_retorno
+            valor_final = consultar_retorno(
+                aplicacao.valor, aplicacao.taxa, aplicacao.meses
+            )
             conta.valor = conta.valor + valor_final
-            aplicacao.valor_final = valor_final   #para o histórico das aplicações
+            aplicacao.valor_final = valor_final  # para o histórico
             libertadas.append(aplicacao)
 
-    #as libertadas saem da lista das aplicações ativas
+    # as libertadas saem da lista das aplicações ativas
     for aplicacao in libertadas:
         aplicacoes.remove(aplicacao)
 

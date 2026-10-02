@@ -1,11 +1,13 @@
-#testes ao sistema (correr com: python -m testes.test_testes a partir da pasta do projeto)
+# testes ao sistema (correr com: python -m testes.test_testes a partir da pasta
+# do projeto)
 import os
 import sys
 
-#garantir que a pasta do projeto está no caminho do Python,
-#para os testes correrem bem mesmo quando são arrancados de outra pasta
+# garantir que a pasta do projeto está no caminho do Python,
+# para os testes correrem bem mesmo quando são arrancados de outra pasta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-#e trabalhar sempre a partir da pasta do projeto (onde vivem o banco.db e as pastas)
+# e trabalhar sempre a partir da pasta do projeto (onde vivem o banco.db e as
+# pastas)
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import sqlite3
@@ -13,13 +15,40 @@ import unittest
 from datetime import datetime, timedelta
 
 from banco.modelos import Utilizador, Conta, Aplicacao, Movimento
-from banco.operacoes import criar_utilizador, transferir, entrar, transferir_por_ficheiro, pesquisar_transacoes, ordenar_registos, consultar_retorno, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
-from banco.dados import limpar_tentativas, guardar_ficheiro_transferencias, ler_ficheiro_transferencias, apagar_ficheiro_transferencias, guardar_csv, apagar_ficheiro_transacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento, listar_movimentos
-from banco.erros import UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
+from banco.operacoes import (
+    criar_utilizador,
+    transferir,
+    entrar,
+    transferir_por_ficheiro,
+    pesquisar_transacoes,
+    ordenar_registos,
+    consultar_retorno,
+    aplicar_dinheiro,
+    verificar_aplicacoes,
+    situacao_aplicacao,
+    cancelar_aplicacao,
+)
+from banco.dados import (
+    limpar_tentativas,
+    guardar_ficheiro_transferencias,
+    ler_ficheiro_transferencias,
+    apagar_ficheiro_transferencias,
+    guardar_csv,
+    apagar_ficheiro_transacoes,
+    guardar_no_historico,
+    listar_historico_aplicacoes,
+    registar_movimento,
+    listar_movimentos,
+)
+from banco.erros import (
+    UtilizadorInexistenteError,
+    SaldoInsuficienteError,
+    ContaBloqueadaError,
+)
 from banco.relatorio import relatorio_contas, relatorio_transferencias
 
 
-#arranjar a base de dados entre testes: apagar as linhas que o teste criou
+# arranjar a base de dados entre testes: apagar as linhas que o teste criou
 def apagar_da_tabela(comando):
     ligacao = sqlite3.connect("banco.db")
     ligacao.execute(comando)
@@ -30,7 +59,7 @@ def apagar_da_tabela(comando):
 class TestBanco(unittest.TestCase):
 
     def setUp(self):
-        #utilizadores e contas de teste usados por todos os testes
+        # utilizadores e contas de teste usados por todos os testes
         self.utilizadores = {}
         self.contas = {}
         self.transacoes = []
@@ -39,54 +68,54 @@ class TestBanco(unittest.TestCase):
         self.utilizadores["ana"] = Utilizador("ana", "ana123")
         self.contas["ana"] = Conta("ana", 200, "PT50 0002")
 
-        #limpar as tentativas de login para cada teste começar igual
+        # limpar as tentativas de login para cada teste começar igual
         limpar_tentativas("bruno")
         limpar_tentativas("ana")
 
     def test_saldo_insuficiente(self):
-        #levantar mais do que o saldo tem de dar erro
+        # levantar mais do que o saldo tem de dar erro
         with self.assertRaises(SaldoInsuficienteError):
             self.contas["bruno"].levantar(500)
 
     def test_deposito(self):
-        #depositar aumenta o saldo
+        # depositar aumenta o saldo
         self.contas["bruno"].depositar(50)
         self.assertEqual(self.contas["bruno"].valor, 150)
 
     def test_levantamento(self):
-        #levantar diminui o saldo
+        # levantar diminui o saldo
         self.contas["bruno"].levantar(30)
         self.assertEqual(self.contas["bruno"].valor, 70)
 
     def test_bloqueio_depois_de_tentativas_erradas(self):
-        #a terceira password errada bloqueia a conta
+        # a terceira password errada bloqueia a conta
         entrar(self.utilizadores, "ana", "errada1")
         entrar(self.utilizadores, "ana", "errada2")
         with self.assertRaises(ContaBloqueadaError):
             entrar(self.utilizadores, "ana", "errada3")
 
-        #bloqueada: o login não entra, nem com outra password
+        # bloqueada: o login não entra, nem com outra password
         with self.assertRaises(ContaBloqueadaError):
             entrar(self.utilizadores, "ana", "ana123")
 
-        #arranjar a utilizadora para os próximos testes
+        # arranjar a utilizadora para os próximos testes
         limpar_tentativas("ana")
 
     def test_login_certo_reseta_as_tentativas(self):
-        #um login certo esquece as tentativas erradas anteriores
+        # um login certo esquece as tentativas erradas anteriores
         entrar(self.utilizadores, "bruno", "errada1")
         entrar(self.utilizadores, "bruno", "errada2")
         utilizador = entrar(self.utilizadores, "bruno", "bruno123")
-        assert utilizador != None  #com a password certa o entrar tem de devolver o utilizador
+        assert utilizador is not None  # o login certo devolve o utilizador
         self.assertEqual(utilizador.username, "bruno")
 
     def test_entrar_com_username_inexistente(self):
-        #tentar entrar com um username que não existe lança a exceção
+        # tentar entrar com um username que não existe lança a exceção
         with self.assertRaises(UtilizadorInexistenteError):
             entrar(self.utilizadores, "zeza", "qualquer123")
 
     def test_criar_utilizador_cria_conta_com_iban(self):
-        #criar um utilizador cria também a conta a zeros com um IBAN único
+        # criar um utilizador cria também a conta a zeros com um IBAN único
         criar_utilizador(self.utilizadores, self.contas, "carla", "carla123")
 
         self.assertIn("carla", self.utilizadores)
@@ -95,80 +124,100 @@ class TestBanco(unittest.TestCase):
         self.assertIn("PT50", self.contas["carla"].iban)
 
     def test_transferencia_por_ficheiro_ok(self):
-        #um ficheiro certo transfere tudo de uma vez
+        # um ficheiro certo transfere tudo de uma vez
         conteudo = "iban,nome,valor\nPT50 0001,bruno,10\n"
-        erros = transferir_por_ficheiro(self.contas, self.transacoes, "ana", conteudo)
+        erros = transferir_por_ficheiro(
+            self.contas, self.transacoes, "ana", conteudo
+        )
 
         self.assertEqual(erros, [])
-        self.assertEqual(self.contas["ana"].valor, 190)    #200 - 10
-        self.assertEqual(self.contas["bruno"].valor, 110)  #100 + 10
+        self.assertEqual(self.contas["ana"].valor, 190)  # 200 - 10
+        self.assertEqual(self.contas["bruno"].valor, 110)  # 100 + 10
         self.assertEqual(len(self.transacoes), 1)
 
     def test_transferencia_por_ficheiro_com_erro_nada_transfere(self):
-        #nome errado numa linha => erro e nenhuma transferência é feita
+        # nome errado numa linha => erro e nenhuma transferência é feita
         conteudo = "iban,nome,valor\nPT50 0001,bruno,10\nPT50 0001,ana,5\n"
-        erros = transferir_por_ficheiro(self.contas, self.transacoes, "ana", conteudo)
+        erros = transferir_por_ficheiro(
+            self.contas, self.transacoes, "ana", conteudo
+        )
 
         self.assertEqual(len(erros), 1)
-        self.assertEqual(self.contas["ana"].valor, 200)  #nada mudou
+        self.assertEqual(self.contas["ana"].valor, 200)  # nada mudou
         self.assertEqual(len(self.transacoes), 0)
 
     def test_ficheiro_de_transferencias_guarda_le_apaga(self):
-        #o ficheiro do utilizador vive na pasta transferencias e é apagado quando ele sai
+        # o ficheiro do utilizador vive na pasta transferencias e é apagado
+        # quando ele sai
         guardar_ficheiro_transferencias("brunoteste", "iban,nome,valor\n")
-        self.assertEqual(ler_ficheiro_transferencias("brunoteste"), "iban,nome,valor\n")
+        self.assertEqual(
+            ler_ficheiro_transferencias("brunoteste"),
+            "iban,nome,valor\n"
+        )
 
         apagar_ficheiro_transferencias("brunoteste")
         with self.assertRaises(FileNotFoundError):
             ler_ficheiro_transferencias("brunoteste")
 
     def test_exportacao_apaga_so_o_ficheiro_do_utilizador(self):
-        #exportar cria a pasta transacoes; ao sair só o ficheiro do utilizador é apagado
+        # exportar cria a pasta transacoes; ao sair só o ficheiro do utilizador
+        # é apagado
         guardar_csv(self.contas["bruno"], [])
         guardar_csv(self.contas["ana"], [])
 
         apagar_ficheiro_transacoes("bruno")
         self.assertFalse(os.path.exists("transacoes/transacoes_bruno.csv"))
-        self.assertTrue(os.path.exists("transacoes/transacoes_ana.csv"))  #o dos outros fica
+        # o ficheiro dos outros fica
+        self.assertTrue(os.path.exists("transacoes/transacoes_ana.csv"))
 
-        #arranjar para os próximos testes
+        # arranjar para os próximos testes
         apagar_ficheiro_transacoes("ana")
 
     def test_pesquisar_transacoes(self):
-        #pesquisar por username, por IBAN e por data encontra as transações certas
+        # pesquisar por username, por IBAN e por data encontra as transações
+        # certas
         transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 10)
 
-        #o bruno pesquisa por "ana": encontra a transação que enviou
-        encontradas = pesquisar_transacoes(self.transacoes, self.contas["bruno"], "ana")
+        # o bruno pesquisa por "ana": encontra a transação que enviou
+        encontradas = pesquisar_transacoes(
+            self.transacoes, self.contas["bruno"], "ana"
+        )
         self.assertEqual(len(encontradas), 1)
 
-        #a ana pesquisa pelo IBAN do bruno: encontra a que recebeu
-        encontradas = pesquisar_transacoes(self.transacoes, self.contas["ana"], "PT50 0001")
+        # a ana pesquisa pelo IBAN do bruno: encontra a que recebeu
+        encontradas = pesquisar_transacoes(
+            self.transacoes, self.contas["ana"], "PT50 0001"
+        )
         self.assertEqual(len(encontradas), 1)
 
-        #pesquisa que não existe em nenhuma transação: não encontra nada
-        encontradas = pesquisar_transacoes(self.transacoes, self.contas["bruno"], "zeze")
+        # pesquisa que não existe em nenhuma transação: não encontra nada
+        encontradas = pesquisar_transacoes(
+            self.transacoes, self.contas["bruno"], "zeze"
+        )
         self.assertEqual(len(encontradas), 0)
 
     def test_deposito_com_valor_invalido(self):
-        #infinito e nan não são valores válidos para dinheiro
+        # infinito e nan não são valores válidos para dinheiro
         with self.assertRaises(ValueError):
             self.contas["bruno"].depositar(float("inf"))
         with self.assertRaises(ValueError):
             self.contas["bruno"].depositar(float("nan"))
 
     def test_transferencia_com_valor_invalido(self):
-        #uma transferência com infinito não pode passar
+        # uma transferência com infinito não pode passar
         with self.assertRaises(ValueError):
-            transferir(self.contas, self.transacoes, "bruno", "PT50 0002", float("inf"))
+            transferir(
+                self.contas, self.transacoes, "bruno", "PT50 0002",
+                float("inf")
+            )
 
     def test_retorno_com_taxa_negativa(self):
-        #a taxa pode ser negativa (entre -100 e 100) e diminui o valor
+        # a taxa pode ser negativa (entre -100 e 100) e diminui o valor
         resultado = consultar_retorno(200, -50, 2)
-        self.assertAlmostEqual(resultado, 50.0)  #200 * 0,5 * 0,5
+        self.assertAlmostEqual(resultado, 50.0)  # 200 * 0,5 * 0,5
 
     def test_retorno_valida_taxa_e_meses(self):
-        #a taxa fora do valor absoluto 0-100 e os meses fora de 1-12 dão erro
+        # a taxa fora do valor absoluto 0-100 e os meses fora de 1-12 dão erro
         with self.assertRaises(ValueError):
             consultar_retorno(100, -101, 5)
         with self.assertRaises(ValueError):
@@ -176,50 +225,55 @@ class TestBanco(unittest.TestCase):
         with self.assertRaises(ValueError):
             consultar_retorno(100, 10, 13)
 
-        #o valor a simular também tem de ser positivo
+        # o valor a simular também tem de ser positivo
         with self.assertRaises(ValueError):
             consultar_retorno(-5, 10, 5)
 
     def test_aplicar_tira_o_valor_do_saldo(self):
-        #aplicar 50 com saldo 100: o valor sai do saldo e fica cativo
+        # aplicar 50 com saldo 100: o valor sai do saldo e fica cativo
         aplicacoes = []
         aplicar_dinheiro(self.contas["bruno"], aplicacoes, 50, 10, 3)
 
         self.assertEqual(self.contas["bruno"].valor, 50)
         self.assertEqual(len(aplicacoes), 1)
 
-        #aplicar mais do que o saldo não pode passar
+        # aplicar mais do que o saldo não pode passar
         with self.assertRaises(SaldoInsuficienteError):
             aplicar_dinheiro(self.contas["bruno"], aplicacoes, 100, 10, 3)
 
     def test_aplicacao_no_fim_do_prazo_devolve_com_juros(self):
-        #aplicação com o prazo já passado: o valor volta ao saldo com os juros
+        # aplicação com o prazo já passado: o valor volta ao saldo com os juros
         aplicacao = Aplicacao("bruno", 100, 10, 2, "01/01/2026 10:00")
         aplicacoes = [aplicacao]
 
         libertadas = verificar_aplicacoes(self.contas["bruno"], aplicacoes)
 
         self.assertEqual(len(libertadas), 1)
-        self.assertEqual(len(aplicacoes), 0)  #saiu das ativas
-        self.assertAlmostEqual(self.contas["bruno"].valor, 221.0)  #100 do saldo + 100 * 1,1 * 1,1
+        self.assertEqual(len(aplicacoes), 0)  # saiu das ativas
+        # 100 do saldo + 100 * 1,1 * 1,1
+        self.assertAlmostEqual(self.contas["bruno"].valor, 221.0)
 
     def test_aplicacao_libertada_fica_no_historico(self):
-        #quando liberta, o valor_final fica preenchido e a aplicação entra no histórico
+        # quando liberta, o valor_final fica preenchido e a aplicação entra no
+        # histórico
         aplicacao = Aplicacao("ana", 200, -50, 2, "01/01/2026 10:00")
 
         libertadas = verificar_aplicacoes(self.contas["ana"], [aplicacao])
-        self.assertAlmostEqual(libertadas[0].valor_final, 50.0)  #200 * 0,5 * 0,5
+        # 200 * 0,5 * 0,5
+        self.assertAlmostEqual(libertadas[0].valor_final, 50.0)
 
         guardar_no_historico(libertadas[0])
         historico = listar_historico_aplicacoes("ana")
         self.assertEqual(len(historico), 1)
         self.assertAlmostEqual(historico[0].valor_final, 50.0)
 
-        #arranjar para os próximos testes
-        apagar_da_tabela("DELETE FROM historico_aplicacoes WHERE username = 'ana'")
+        # arranjar para os próximos testes
+        apagar_da_tabela(
+            "DELETE FROM historico_aplicacoes WHERE username = 'ana'"
+        )
 
     def test_relatorio_contas(self):
-        #maior saldo, menor saldo e soma de todos os saldos
+        # maior saldo, menor saldo e soma de todos os saldos
         resultado = relatorio_contas(self.contas)
 
         self.assertEqual(resultado["maior"], [200, ["ana"]])
@@ -227,7 +281,7 @@ class TestBanco(unittest.TestCase):
         self.assertEqual(resultado["soma"], 300)
 
     def test_relatorio_transferencias(self):
-        #quem mais recebeu, quem mais enviou e o total transferido
+        # quem mais recebeu, quem mais enviou e o total transferido
         transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 10)
         transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 5)
         transferir(self.contas, self.transacoes, "ana", "PT50 0001", 3)
@@ -239,7 +293,7 @@ class TestBanco(unittest.TestCase):
         self.assertEqual(resultado["total"], 18)
 
     def test_ordenar_transacoes_por_valor(self):
-        #o selection sort ordena crescente e decrescente sem mexer na original
+        # o selection sort ordena crescente e decrescente sem mexer na original
         transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 10)
         transferir(self.contas, self.transacoes, "bruno", "PT50 0002", 5)
         transferir(self.contas, self.transacoes, "ana", "PT50 0001", 30)
@@ -247,62 +301,81 @@ class TestBanco(unittest.TestCase):
         valores = [t.valor for t in ordenar_registos(self.transacoes, "valor")]
         self.assertEqual(valores, [5, 10, 30])
 
-        valores = [t.valor for t in ordenar_registos(self.transacoes, "valor", True)]
+        valores = [
+            t.valor
+            for t in ordenar_registos(self.transacoes, "valor", True)
+        ]
         self.assertEqual(valores, [30, 10, 5])
 
-        #a lista original fica pela ordem em que foi criada
+        # a lista original fica pela ordem em que foi criada
         self.assertEqual([t.valor for t in self.transacoes], [10, 5, 30])
 
     def test_ordenar_registos_por_data(self):
-        #por data a ordenação tem de atravessar bem a mudança de mês
+        # por data a ordenação tem de atravessar bem a mudança de mês
         m1 = Movimento("bruno", "Depósito", "30/08/2026 10:00", 50)
         m2 = Movimento("bruno", "Levantamento", "05/09/2026 15:00", 20)
         m3 = Movimento("bruno", "Depósito", "21/09/2026 09:00", 30)
 
         ordenados = ordenar_registos([m2, m1, m3], "data")
-        self.assertEqual([m.data[:5] for m in ordenados], ["30/08", "05/09", "21/09"])
+        self.assertEqual(
+            [m.data[:5] for m in ordenados],
+            ["30/08", "05/09", "21/09"]
+        )
 
-        #decrescente por valor continua a funcionar na mesma função
+        # decrescente por valor continua a funcionar na mesma função
         ordenados = ordenar_registos([m1, m2, m3], "valor", True)
         self.assertEqual([m.valor for m in ordenados], [50, 30, 20])
 
     def test_registar_e_listar_movimentos(self):
-        #os depósitos e levantamentos ficam registados um a um
+        # os depósitos e levantamentos ficam registados um a um
         registar_movimento("brunoteste", "Depósito", 100)
         registar_movimento("brunoteste", "Levantamento", 40)
 
         movimentos = listar_movimentos("brunoteste")
         self.assertEqual(len(movimentos), 2)
-        self.assertEqual([m.tipo for m in movimentos], ["Depósito", "Levantamento"])
+        self.assertEqual(
+            [m.tipo for m in movimentos],
+            ["Depósito", "Levantamento"]
+        )
 
-        #arranjar para os próximos testes
-        apagar_da_tabela("DELETE FROM movimentos WHERE username = 'brunoteste'")
+        # arranjar para os próximos testes
+        apagar_da_tabela(
+            "DELETE FROM movimentos WHERE username = 'brunoteste'"
+        )
 
     def test_situacao_aplicacao(self):
-        #uma aplicação a meio do prazo: já rendeu os meses passados e faltam os dias restantes
+        # uma aplicação a meio do prazo: já rendeu os meses passados e faltam
+        # os dias restantes
         fim = datetime.now() + timedelta(days=40)
-        aplicacao = Aplicacao("bruno", 100, 10, 3, fim.strftime("%d/%m/%Y %H:%M"))
+        aplicacao = Aplicacao(
+            "bruno", 100, 10, 3, fim.strftime("%d/%m/%Y %H:%M")
+        )
 
         valor_hoje, dias_restantes = situacao_aplicacao(aplicacao)
 
-        #começou há 50 dias (90 - 40): passou 1 mês completo, já rendeu uma vez
+        # começou há 50 dias (90 - 40): passou 1 mês completo,
+        # já rendeu uma vez
         self.assertAlmostEqual(valor_hoje, 110.0)
-        #39 e não 40: a data guardada não tem segundos, fica um pouco atrás
+        # 39 e não 40: a data guardada não tem segundos, fica um pouco atrás
         self.assertEqual(dias_restantes, 39)
 
     def test_cancelar_aplicacao_devolve_o_ganho(self):
-        #cancelar a meio: o valor de hoje volta ao saldo e sai das ativas
+        # cancelar a meio: o valor de hoje volta ao saldo e sai das ativas
         fim = datetime.now() + timedelta(days=40)
-        aplicacao = Aplicacao("bruno", 100, 10, 3, fim.strftime("%d/%m/%Y %H:%M"))
+        aplicacao = Aplicacao(
+            "bruno", 100, 10, 3, fim.strftime("%d/%m/%Y %H:%M")
+        )
         aplicacoes = [aplicacao]
 
         cancelada = cancelar_aplicacao(self.contas["bruno"], aplicacoes, 1)
 
         self.assertEqual(len(aplicacoes), 0)
-        self.assertAlmostEqual(cancelada.valor_final, 110.0)   #100 + 1 mês de juros
-        self.assertAlmostEqual(self.contas["bruno"].valor, 210.0)  #100 do saldo + 110
+        # 100 + 1 mês de juros
+        self.assertAlmostEqual(cancelada.valor_final, 110.0)
+        # 100 do saldo + 110
+        self.assertAlmostEqual(self.contas["bruno"].valor, 210.0)
 
-        #número fora da lista dá erro
+        # número fora da lista dá erro
         with self.assertRaises(ValueError):
             cancelar_aplicacao(self.contas["bruno"], aplicacoes, 1)
 

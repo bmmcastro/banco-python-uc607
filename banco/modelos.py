@@ -1,11 +1,11 @@
-#estruturas do sistema
+# estruturas do sistema
 import math
 from dataclasses import dataclass
 
 from banco.erros import SaldoInsuficienteError
 
-#formato usado em todas as datas do sistema
-#(transações, movimentos e aplicações: dia/mês/ano hora:minuto)
+# formato usado em todas as datas do sistema
+# (transações, movimentos e aplicações: dia/mês/ano hora:minuto)
 FORMATO_DATA = "%d/%m/%Y %H:%M"
 
 
@@ -45,7 +45,7 @@ class Conta:
 
 @dataclass
 class Transacao:
-    data: str              #data e hora em que a transação foi efetuada
+    data: str  # data e hora em que a transação foi efetuada
     valor: float
     iban_origem: str
     username_origem: str
@@ -55,18 +55,18 @@ class Transacao:
 
 @dataclass
 class Aplicacao:
-    username: str          #dono da aplicação
-    valor: float           #valor aplicado (fica cativo)
-    taxa: float            #taxa de juro mensal
-    meses: int             #prazo da aplicação
-    data_fim: str          #quando acaba o prazo (dd/mm/aaaa hh:mm)
-    valor_final: float = None   #quanto rendeu (só fica preenchido no histórico)
+    username: str  # dono da aplicação
+    valor: float  # valor aplicado (fica cativo)
+    taxa: float  # taxa de juro mensal
+    meses: int  # prazo da aplicação
+    data_fim: str  # quando acaba o prazo (dd/mm/aaaa hh:mm)
+    valor_final: float = None  # quanto rendeu (preenchido no histórico)
 
 
 @dataclass
 class Movimento:
-    username: str          #a quem pertence o movimento
-    tipo: str              #Depósito, Levantamento, Enviada ou Recebida
-    data: str              #quando aconteceu (dd/mm/aaaa hh:mm)
+    username: str  # a quem pertence o movimento
+    tipo: str  # Depósito, Levantamento, Enviada ou Recebida
+    data: str  # quando aconteceu (dd/mm/aaaa hh:mm)
     valor: float
-    texto: str = ""        #detalhe (origem e destino, nas transferências)
+    texto: str = ""  # detalhe (origem e destino, nas transferências)

@@ -1,20 +1,25 @@
-#testes ao projeto escritos diretamente com a biblioteca pytest
-#(correr com: python -m pytest testes/ a partir da pasta do projeto)
+# testes ao projeto escritos diretamente com a biblioteca pytest
+# (correr com: python -m pytest testes/ a partir da pasta do projeto)
 import os
 import sys
 
-#garantir que a pasta do projeto está no caminho do Python,
-#para os testes correrem bem mesmo quando são arrancados de outra pasta
+# garantir que a pasta do projeto está no caminho do Python,
+# para os testes correrem bem mesmo quando são arrancados de outra pasta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
 from banco.modelos import Utilizador, Conta
 from banco.operacoes import criar_utilizador, transferir
-from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError
+from banco.erros import (
+    UtilizadorJaExisteError,
+    UtilizadorInexistenteError,
+    SaldoInsuficienteError,
+)
 
 
-#utilizadores e contas de teste usados pelos testes (o mesmo arranjo para todos)
+# utilizadores e contas de teste usados pelos testes (o mesmo arranjo para
+# todos)
 def arranjar():
     utilizadores = {}
     contas = {}
@@ -26,7 +31,7 @@ def arranjar():
     return utilizadores, contas, transacoes
 
 
-#teste ao utilizador duplicado na criação
+# teste ao utilizador duplicado na criação
 def test_utilizador_duplicado_na_criacao():
     utilizadores, contas, _ = arranjar()
 
@@ -34,7 +39,7 @@ def test_utilizador_duplicado_na_criacao():
         criar_utilizador(utilizadores, contas, "bruno", "outra123")
 
 
-#teste ao utilizador inexistente na transferência
+# teste ao utilizador inexistente na transferência
 def test_utilizador_inexistente_na_transferencia():
     _, contas, transacoes = arranjar()
 
@@ -42,18 +47,18 @@ def test_utilizador_inexistente_na_transferencia():
         transferir(contas, transacoes, "bruno", "PT50 9999", 10)
 
 
-#teste à transferência com sucesso
+# teste à transferência com sucesso
 def test_transferencia_com_sucesso():
     _, contas, transacoes = arranjar()
 
     transferir(contas, transacoes, "bruno", "PT50 0002", 25)
 
-    assert contas["bruno"].valor == 75    #100 - 25
-    assert contas["ana"].valor == 225     #200 + 25
-    assert len(transacoes) == 1           #a transferência ficou registada
+    assert contas["bruno"].valor == 75  # 100 - 25
+    assert contas["ana"].valor == 225  # 200 + 25
+    assert len(transacoes) == 1  # a transferência ficou registada
 
 
-#teste ao saldo insuficiente na transferência
+# teste ao saldo insuficiente na transferência
 def test_saldo_insuficiente_na_transferencia():
     _, contas, transacoes = arranjar()
 

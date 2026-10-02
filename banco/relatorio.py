@@ -1,9 +1,10 @@
-#relatório do sistema: usa threads para contar as transferências de cada conta
-#e processos para as estatísticas das contas e das transferências
+# relatório do sistema: usa threads para contar as transferências de cada conta
+# e processos para as estatísticas das contas e das transferências
 import threading
 from multiprocessing import Process, Queue
 
-#contar as transferências enviadas por uma conta (cada thread conta uma conta)
+
+# contar as transferências enviadas por uma conta (cada thread conta uma conta)
 def contar_transferencias(username, transacoes, contadores):
     contador = 0
     for transacao in transacoes:
@@ -12,34 +13,42 @@ def contar_transferencias(username, transacoes, contadores):
 
     contadores[username] = contador
 
-#gerar o relatório do sistema: devolve uma lista ordenada com
-#[valor, username, nº de transferências] de cada conta (ordenada do maior valor para o menor)
+
+# gerar o relatório do sistema: devolve uma lista ordenada com
+# [valor, username, nº de transferências] de cada conta (ordenada do maior
+# valor para o menor)
 def gerar_relatorio(contas, transacoes):
     contadores = {}
 
-    #uma thread por conta, todas a contar ao mesmo tempo
+    # uma thread por conta, todas a contar ao mesmo tempo
     threads = []
     for username in contas:
-        thread = threading.Thread(target=contar_transferencias, args=(username, transacoes, contadores))
+        thread = threading.Thread(
+            target=contar_transferencias,
+            args=(username, transacoes, contadores)
+        )
         threads.append(thread)
         thread.start()
 
-    #esperar que todas as threads terminem antes de continuar
+    # esperar que todas as threads terminem antes de continuar
     for thread in threads:
         thread.join()
 
-    #pôr tudo numa lista de listas [valor, username, transferências]
+    # pôr tudo numa lista de listas [valor, username, transferências]
     relatorio = []
     for username in contas:
-        relatorio.append([contas[username].valor, username, contadores[username]])
+        relatorio.append(
+            [contas[username].valor, username, contadores[username]]
+        )
 
-    #o sort ordena pelo primeiro elemento de cada lista (o valor)
+    # o sort ordena pelo primeiro elemento de cada lista (o valor)
     relatorio.sort(reverse=True)
 
     return relatorio
 
-#estatísticas das contas: os utilizadores com maior saldo, com menor saldo
-#e a soma de todos os saldos (se houver empate, aparecem todos)
+
+# estatísticas das contas: os utilizadores com maior saldo, com menor saldo
+# e a soma de todos os saldos (se houver empate, aparecem todos)
 def relatorio_contas(contas):
     if len(contas) == 0:
         return {"maior": None, "menor": None, "soma": 0}
@@ -50,12 +59,12 @@ def relatorio_contas(contas):
     for username in contas:
         valor = contas[username].valor
         soma = soma + valor
-        if maior_valor == None or valor > maior_valor:
+        if maior_valor is None or valor > maior_valor:
             maior_valor = valor
-        if menor_valor == None or valor < menor_valor:
+        if menor_valor is None or valor < menor_valor:
             menor_valor = valor
 
-    #os utilizadores que têm o maior e o menor saldo
+    # os utilizadores que têm o maior e o menor saldo
     maiores = []
     menores = []
     for username in contas:
@@ -64,10 +73,15 @@ def relatorio_contas(contas):
         if contas[username].valor == menor_valor:
             menores.append(username)
 
-    return {"maior": [maior_valor, maiores], "menor": [menor_valor, menores], "soma": round(soma, 2)}
+    return {
+        "maior": [maior_valor, maiores],
+        "menor": [menor_valor, menores],
+        "soma": round(soma, 2),
+    }
 
-#estatísticas das transferências: o utilizador que mais dinheiro recebeu,
-#o que mais enviou e a soma de todo o dinheiro transferido
+
+# estatísticas das transferências: o utilizador que mais dinheiro recebeu,
+# o que mais enviou e a soma de todo o dinheiro transferido
 def relatorio_transferencias(transacoes):
     if len(transacoes) == 0:
         return {"mais_recebeu": None, "mais_enviou": None, "total": 0}
@@ -76,8 +90,12 @@ def relatorio_transferencias(transacoes):
     enviado = {}
     total = 0
     for transacao in transacoes:
-        recebido[transacao.username_destino] = recebido.get(transacao.username_destino, 0) + transacao.valor
-        enviado[transacao.username_origem] = enviado.get(transacao.username_origem, 0) + transacao.valor
+        recebido[transacao.username_destino] = (
+            recebido.get(transacao.username_destino, 0) + transacao.valor
+        )
+        enviado[transacao.username_origem] = (
+            enviado.get(transacao.username_origem, 0) + transacao.valor
+        )
         total = total + transacao.valor
 
     maior_recebido = 0
@@ -90,7 +108,8 @@ def relatorio_transferencias(transacoes):
         if valor > maior_enviado:
             maior_enviado = valor
 
-    #os utilizadores que mais receberam e os que mais enviaram (pode haver empate)
+    # os utilizadores que mais receberam e os que mais enviaram (pode haver
+    # empate)
     mais_recebeu = []
     mais_enviou = []
     for username in recebido:
@@ -106,14 +125,19 @@ def relatorio_transferencias(transacoes):
         "total": round(total, 2),
     }
 
-#os processos põem o resultado na fila (é a forma de devolver valores entre processos)
+
+# os processos põem o resultado na fila (é a forma de devolver valores entre
+# processos)
 def _tarefa_contas(fila, contas):
     fila.put(relatorio_contas(contas))
+
 
 def _tarefa_transferencias(fila, transacoes):
     fila.put(relatorio_transferencias(transacoes))
 
-#gerar o relatório com dois processos: um analisa as contas, outro as transferências
+
+# gerar o relatório com dois processos: um analisa as contas, outro as
+# transferências
 def gerar_relatorio_processos(contas, transacoes):
     fila = Queue()
 
@@ -123,7 +147,7 @@ def gerar_relatorio_processos(contas, transacoes):
     processo1.start()
     processo2.start()
 
-    #ir buscar os resultados e só depois esperar pelos processos
+    # ir buscar os resultados e só depois esperar pelos processos
     estatisticas_contas = fila.get()
     estatisticas_transferencias = fila.get()
     processo1.join()

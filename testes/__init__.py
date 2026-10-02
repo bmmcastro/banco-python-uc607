@@ -1,1 +1,1 @@
-#este ficheiro faz desta pasta um pacote
+# este ficheiro faz desta pasta um pacote

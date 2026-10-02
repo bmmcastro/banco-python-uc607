@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timedelta
 
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
-from banco.modelos import Utilizador, Conta, Transacao, Aplicacao
+from banco.modelos import Utilizador, Conta, Transacao, Aplicacao, FORMATO_DATA
 from banco.dados import ver_bloqueio, anotar_tentativa, limpar_tentativas
 
 #limite de tentativas de login: 3 passwords erradas bloqueiam a conta durante 30 segundos
@@ -137,7 +137,7 @@ def transferir(contas, transacoes, username_origem, iban_destino, valor):
     contas[username_destino].valor = contas[username_destino].valor + valor
 
     #registrar a transação com a data e hora automáticas
-    data = datetime.now().strftime("%d/%m/%Y %H:%M")
+    data = datetime.now().strftime(FORMATO_DATA)
     transacao = Transacao(
         data,
         valor,
@@ -226,8 +226,8 @@ def ordenar_registos(registos, campo, decrescente=False):
         for j in range(i + 1, n):
             if campo == "data":
                 #as datas são texto (dd/mm/aaaa hh:mm): converter para comparar bem
-                valor_j = datetime.strptime(ordenados[j].data, "%d/%m/%Y %H:%M")
-                valor_m = datetime.strptime(ordenados[m].data, "%d/%m/%Y %H:%M")
+                valor_j = datetime.strptime(ordenados[j].data, FORMATO_DATA)
+                valor_m = datetime.strptime(ordenados[m].data, FORMATO_DATA)
             else:
                 valor_j = ordenados[j].valor
                 valor_m = ordenados[m].valor
@@ -241,10 +241,6 @@ def ordenar_registos(registos, campo, decrescente=False):
         ordenados[i], ordenados[m] = ordenados[m], ordenados[i]
 
     return ordenados
-
-#ordenar transações por valor: usa a mesma função de cima
-def ordenar_transacoes_por_valor(transacoes, decrescente=False):
-    return ordenar_registos(transacoes, "valor", decrescente)
 
 #pesquisar as transações de uma conta por texto: a pesquisa pode ser uma data,
 #um username, um IBAN ou um valor; devolve a lista das transações que correspondem
@@ -304,14 +300,14 @@ def aplicar_dinheiro(conta, aplicacoes, valor, taxa, meses):
 
     #o fim do prazo fica registado (cada mês conta-se como 30 dias)
     fim = datetime.now() + timedelta(days=30 * int(meses))
-    aplicacoes.append(Aplicacao(conta.username, valor, taxa, int(meses), fim.strftime("%d/%m/%Y %H:%M")))
+    aplicacoes.append(Aplicacao(conta.username, valor, taxa, int(meses), fim.strftime(FORMATO_DATA)))
 
     #o valor aplicado sai do saldo e fica cativo
     conta.valor = conta.valor - valor
 
 #quanto vale hoje uma aplicação (os juros já corridos) e quantos dias faltam para o fim
 def situacao_aplicacao(aplicacao):
-    fim = datetime.strptime(aplicacao.data_fim, "%d/%m/%Y %H:%M")
+    fim = datetime.strptime(aplicacao.data_fim, FORMATO_DATA)
     agora = datetime.now()
 
     #a aplicação começou meses*30 dias antes do fim do prazo
@@ -351,13 +347,13 @@ def cancelar_aplicacao(conta, aplicacoes, numero):
     aplicacao = minhas[numero - 1]
 
     #devolve o valor de hoje (o aplicado + os juros já corridos)
-    valor_hoje, dias_restantes = situacao_aplicacao(aplicacao)
+    valor_hoje, _ = situacao_aplicacao(aplicacao)
     conta.valor = conta.valor + valor_hoje
 
     #a aplicação sai das ativas e fica marcada com o que rendeu,
     #com a data do cancelamento (foi quando realmente terminou)
     aplicacao.valor_final = valor_hoje
-    aplicacao.data_fim = datetime.now().strftime("%d/%m/%Y %H:%M")
+    aplicacao.data_fim = datetime.now().strftime(FORMATO_DATA)
     aplicacoes.remove(aplicacao)
 
     return aplicacao
@@ -372,7 +368,7 @@ def verificar_aplicacoes(conta, aplicacoes):
         if aplicacao.username != conta.username:
             continue
 
-        fim = datetime.strptime(aplicacao.data_fim, "%d/%m/%Y %H:%M")
+        fim = datetime.strptime(aplicacao.data_fim, FORMATO_DATA)
         if fim <= agora:
             #os juros do prazo todo, com a mesma recursão do consultar_retorno
             valor_final = consultar_retorno(aplicacao.valor, aplicacao.taxa, aplicacao.meses)

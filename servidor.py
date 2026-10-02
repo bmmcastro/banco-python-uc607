@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify, session, send_file, send_from_directory
 from banco.erros import UtilizadorJaExisteError, UtilizadorInexistenteError, SaldoInsuficienteError, ContaBloqueadaError
 from banco.operacoes import criar_utilizador, entrar, transferir, consultar_retorno, procurar_por_iban, limpar_iban, transferir_por_ficheiro, pesquisar_transacoes, ordenar_registos, aplicar_dinheiro, verificar_aplicacoes, situacao_aplicacao, cancelar_aplicacao
-from banco.dados import criar_tabelas, carregar_dados, guardar_dados, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento, listar_movimentos
+from banco.dados import criar_tabelas, carregar_dados, guardar_dados, criar_dados_iniciais, guardar_csv, guardar_ficheiro_transferencias, apagar_ficheiro_transferencias, apagar_ficheiro_transacoes, guardar_aplicacoes, guardar_no_historico, listar_historico_aplicacoes, registar_movimento, listar_movimentos
 from banco.modelos import Movimento
 from banco.relatorio import gerar_relatorio, gerar_relatorio_processos
 
@@ -15,20 +15,20 @@ app = Flask(__name__, static_folder=None)
 #a chave das sessões vem do servidor (CHAVE_SECRETA no .htaccess); em local usa-se a chave de teste
 app.secret_key = os.environ.get("CHAVE_SECRETA", "banco-python-uc607")
 
-#dados do sistema em memória (iguais aos do main.py)
+#dados do sistema em memória
 criar_tabelas()
 utilizadores, contas, transacoes, aplicacoes = carregar_dados()
 
+#primeira execução: criar os utilizadores de teste (os mesmos do terminal)
 if len(contas) == 0:
-    from banco.modelos import Utilizador, Conta, Transacao
-    utilizadores["bruno"] = Utilizador("bruno", "bruno123")
-    contas["bruno"] = Conta("bruno", 100, "PT50 0001")
-    utilizadores["ana"] = Utilizador("ana", "ana123")
-    contas["ana"] = Conta("ana", 200, "PT50 0002")
-    contas["bruno"].valor = contas["bruno"].valor - 50
-    contas["ana"].valor = contas["ana"].valor + 50
-    transacoes.append(Transacao("07/09/2026 10:00", 50, "PT50 0001", "bruno", "PT50 0002", "ana"))
+    utilizadores, contas, transacoes = criar_dados_iniciais()
     guardar_dados(utilizadores, contas, transacoes)
+
+
+#resposta para quando um pedido chega sem sessão iniciada
+def sem_sessao():
+    return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+
 
 
 #as páginas e os ficheiros do site
@@ -258,7 +258,7 @@ def api_aplicacoes():
 @app.route("/api/cancelar_aplicacao", methods=["POST"])
 def api_cancelar_aplicacao():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     conta = contas[session["username"]]
     dados = request.get_json(silent=True)
@@ -277,7 +277,7 @@ def api_cancelar_aplicacao():
 @app.route("/api/aplicar", methods=["POST"])
 def api_aplicar():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     conta = contas[session["username"]]
     dados = request.get_json(silent=True)
@@ -296,7 +296,7 @@ def api_aplicar():
 @app.route("/api/levantar", methods=["POST"])
 def api_levantar():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     conta = contas[session["username"]]
     try:
@@ -315,7 +315,7 @@ def api_levantar():
 @app.route("/api/depositar", methods=["POST"])
 def api_depositar():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     conta = contas[session["username"]]
     try:
@@ -332,7 +332,7 @@ def api_depositar():
 @app.route("/api/consultar_iban", methods=["POST"])
 def api_consultar_iban():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     #limpar o IBAN recebido (maiúsculas, espaços, PT50 repetido)
     try:
@@ -350,7 +350,7 @@ def api_consultar_iban():
 @app.route("/api/transferir", methods=["POST"])
 def api_transferir():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     dados = request.get_json(silent=True)
     try:
@@ -375,7 +375,7 @@ def ficheiro_exemplo_transferencias():
 @app.route("/api/transferencias_ficheiro", methods=["POST"])
 def api_transferencias_ficheiro():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     try:
         conteudo = request.get_json(silent=True)["conteudo"]
@@ -485,7 +485,7 @@ def api_relatorio():
 @app.route("/api/retorno", methods=["POST"])
 def api_retorno():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     conta = contas[session["username"]]
     dados = request.get_json(silent=True)
@@ -500,7 +500,7 @@ def api_retorno():
 @app.route("/api/exportar")
 def api_exportar():
     if "username" not in session:
-        return jsonify({"ok": False, "erro": "Não tens sessão iniciada."})
+        return sem_sessao()
 
     conta = contas[session["username"]]
     nome_ficheiro = guardar_csv(conta, [

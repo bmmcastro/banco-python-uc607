@@ -12,7 +12,7 @@ import csv
 import time
 from datetime import datetime
 
-from banco.modelos import Utilizador, Conta, Transacao, Aplicacao, Movimento
+from banco.modelos import Utilizador, Conta, Transacao, Aplicacao, Movimento, FORMATO_DATA
 
 #criar as tabelas no ficheiro banco.db (só cria se ainda não existirem)
 def criar_tabelas():
@@ -159,6 +159,27 @@ def guardar_dados(utilizadores, contas, transacoes):
             break
         except sqlite3.OperationalError:
             time.sleep(0.2)  #a base de dados estava ocupada, tentar outra vez
+
+#dados de teste da primeira execução (quando a base de dados ainda está vazia):
+#dois utilizadores e uma transferência de exemplo entre eles
+def criar_dados_iniciais():
+    utilizadores = {}
+    contas = {}
+    transacoes = []
+
+    utilizadores["bruno"] = Utilizador("bruno", "bruno123")
+    contas["bruno"] = Conta("bruno", 100, "PT50 0001")
+    utilizadores["ana"] = Utilizador("ana", "ana123")
+    contas["ana"] = Conta("ana", 200, "PT50 0002")
+
+    #transação de exemplo: o bruno transferiu 50 para a ana
+    #(a transferência mexe nos saldos: tira ao bruno e dá à ana)
+    contas["bruno"].valor = contas["bruno"].valor - 50
+    contas["ana"].valor = contas["ana"].valor + 50
+    transacao = Transacao("07/09/2026 10:00", 50, "PT50 0001", "bruno", "PT50 0002", "ana")
+    transacoes.append(transacao)
+
+    return utilizadores, contas, transacoes
 
 #tentativas de login erradas e bloqueios (guardadas na base de dados para
 #funcionarem igual no terminal e no site, mesmo com o servidor a correr em processos separados)

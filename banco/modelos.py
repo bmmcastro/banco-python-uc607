@@ -4,6 +4,10 @@ from dataclasses import dataclass
 
 from banco.erros import SaldoInsuficienteError
 
+#formato usado em todas as datas do sistema
+#(transações, movimentos e aplicações: dia/mês/ano hora:minuto)
+FORMATO_DATA = "%d/%m/%Y %H:%M"
+
 
 @dataclass
 class Utilizador:

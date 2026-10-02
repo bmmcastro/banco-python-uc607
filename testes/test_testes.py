@@ -19,6 +19,14 @@ from banco.erros import UtilizadorInexistenteError, SaldoInsuficienteError, Cont
 from banco.relatorio import relatorio_contas, relatorio_transferencias
 
 
+#arranjar a base de dados entre testes: apagar as linhas que o teste criou
+def apagar_da_tabela(comando):
+    ligacao = sqlite3.connect("banco.db")
+    ligacao.execute(comando)
+    ligacao.commit()
+    ligacao.close()
+
+
 class TestBanco(unittest.TestCase):
 
     def setUp(self):
@@ -208,10 +216,7 @@ class TestBanco(unittest.TestCase):
         self.assertAlmostEqual(historico[0].valor_final, 50.0)
 
         #arranjar para os próximos testes
-        ligacao = sqlite3.connect("banco.db")
-        ligacao.execute("DELETE FROM historico_aplicacoes WHERE username = 'ana'")
-        ligacao.commit()
-        ligacao.close()
+        apagar_da_tabela("DELETE FROM historico_aplicacoes WHERE username = 'ana'")
 
     def test_relatorio_contas(self):
         #maior saldo, menor saldo e soma de todos os saldos
@@ -271,10 +276,7 @@ class TestBanco(unittest.TestCase):
         self.assertEqual([m.tipo for m in movimentos], ["Depósito", "Levantamento"])
 
         #arranjar para os próximos testes
-        ligacao = sqlite3.connect("banco.db")
-        ligacao.execute("DELETE FROM movimentos WHERE username = 'brunoteste'")
-        ligacao.commit()
-        ligacao.close()
+        apagar_da_tabela("DELETE FROM movimentos WHERE username = 'brunoteste'")
 
     def test_situacao_aplicacao(self):
         #uma aplicação a meio do prazo: já rendeu os meses passados e faltam os dias restantes

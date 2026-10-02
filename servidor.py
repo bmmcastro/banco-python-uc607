@@ -392,7 +392,7 @@ def api_transferencias_ficheiro():
     if len(erros) > 0:
         return jsonify({"ok": False, "erros": erros})
 
-    guardar_dados(contas, transacoes)
+    guardar_dados(utilizadores, contas, transacoes)
     return jsonify({"ok": True, "valor": contas[session["username"]].valor})
 
 @app.route("/api/transacoes")

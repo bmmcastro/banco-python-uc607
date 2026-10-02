@@ -1,4 +1,11 @@
 #tudo o que mexe em ficheiros: a base de dados sqlite e os ficheiros csv
+#nota: optámos por uma base de dados sqlite para a persistência dos dados
+#(utilizadores, contas, transações e aplicações sobrevivem ao fechar o programa).
+#a manipulação de ficheiros pedida no enunciado está nas duas funcionalidades
+#de csv: a exportação do histórico para transacoes/<username>.csv (guardar_csv)
+#e a importação das transferências por ficheiro transferencias/<username>.csv
+#(guardar/ler/apagar_ficheiro_transferencias aqui, e a leitura e validação das
+#linhas em transferir_por_ficheiro no operacoes.py)
 import os
 import sqlite3
 import csv

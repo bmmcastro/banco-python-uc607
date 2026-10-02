@@ -66,7 +66,7 @@ projeto_banco/
 
 ## Dados
 
-- `banco.db` — base de dados SQLite com as contas e as transações (criada automaticamente)
+- `banco.db` — base de dados SQLite com as contas e as transações (criada automaticamente). Foi a opção tomada para a **persistência dos dados**; a **manipulação de ficheiros** pedida no enunciado está nos dois CSVs abaixo (exportação do histórico e importação de transferências)
 - `transacoes/` — as exportações do histórico (`transacoes_<username>.csv`, um por utilizador; a pasta é criada se não existir e o ficheiro é apagado quando o utilizador sai — os dos outros ficam intactos)
 - `transferencias/` — os ficheiros de transferências por CSV (um por utilizador; no terminal é `transferencias/<username>.csv`, no site é guardado o ficheiro carregado; o ficheiro é apagado quando o utilizador sai)
 

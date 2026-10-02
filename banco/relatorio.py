@@ -80,14 +80,14 @@ def relatorio_transferencias(transacoes):
         enviado[transacao.username_origem] = enviado.get(transacao.username_origem, 0) + transacao.valor
         total = total + transacao.valor
 
-    maior_recebido = None
+    maior_recebido = 0
     for valor in recebido.values():
-        if maior_recebido == None or valor > maior_recebido:
+        if valor > maior_recebido:
             maior_recebido = valor
 
-    maior_enviado = None
+    maior_enviado = 0
     for valor in enviado.values():
-        if maior_enviado == None or valor > maior_enviado:
+        if valor > maior_enviado:
             maior_enviado = valor
 
     #os utilizadores que mais receberam e os que mais enviaram (pode haver empate)
